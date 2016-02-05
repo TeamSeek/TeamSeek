@@ -2,7 +2,7 @@
 #bioEl {
   margin-bottom: 20px;
 }
-.bioEdit {
+.bio-edit {
   padding: 10px;
   border: solid;
   border-width: 1px;
@@ -23,7 +23,8 @@ textarea {
   border: none;
   resize: none;
   outline: none;
-  font-size: 14px;
+  font-size: inherit;
+  height: 300px;
   padding: 0px;
 }
 textarea:disabled {
@@ -31,6 +32,9 @@ textarea:disabled {
   color: black;
 }
 
+.skillbox {
+  margin-top: 15px;
+}
 .skill {
   border-width: 1px;
   margin-right: 4px;
@@ -49,8 +53,9 @@ textarea:disabled {
             {{user}}<a class="topDetailLink" v-on:click="editBio()" v-if="isOwnProfile && !editableBio">Edit</a>
           </h2>
           <div id="bioEl" v-cloak>
-            <textarea v-bind:class="{ 'bioEdit': editableBio }" :spellcheck="editableBio"
+            <textarea v-if="editableBio" :spellcheck="editableBio" class="bio-edit"
                       v-model="bio" :disabled="!editableBio">{{bio}}</textarea>
+            <div class="bio-display" v-else>{{bio}}</div>
             <button v-if="editableBio" class="accept-button" v-on:click="saveBio()">Save</button>
             <button v-if="editableBio" class="cancel-button" v-on:click="cancelBio()">Cancel</button>
             <div class="skillbox">
