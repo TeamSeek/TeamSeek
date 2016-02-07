@@ -14,8 +14,7 @@ class UserHandler(object):
         # [GET] Getting user's details
         'user_details': [],     # To get user's full details
         # [POST] Editing user's details
-        'edit_first_name': ['user_extras', 'first_name'],
-        'edit_last_name': ['user_extras', 'last_name'],
+        'edit_full_name': ['user_extras', 'full_name'],
         'edit_bio': ['user_extras', 'bio'],
         'edit_avatar': ['user_extras', 'avatar'],
         'edit_skill_level': ['user_skills', 'level'],
@@ -61,8 +60,7 @@ class UserHandler(object):
         # Fetch the user that has 'username'
         query = """
                 SELECT  users.user_id, username, email, join_date,
-                        (SELECT first_name FROM user_extras WHERE user_id = users.user_id),
-                        (SELECT last_name FROM user_extras WHERE user_id = users.user_id),
+                        (SELECT full_name FROM user_extras WHERE user_id = users.user_id),
                         (SELECT bio FROM user_extras WHERE user_id = users.user_id),
                         (SELECT avatar FROM user_extras WHERE user_id = users.user_id),
                         array(SELECT skill FROM user_skills WHERE user_skills.user_id = users.user_id)
@@ -87,8 +85,7 @@ class UserHandler(object):
         Editing a particular user's detail
 
         :param params:  See _ACTION at the top of this file for list of actions
-                        i.e. {'action': 'edit_first_name', 'data': 'something'}
-                        i.e. {'action': 'edit_last_name', 'data': 'something'}
+                        i.e. {'action': 'edit_full_name', 'data': 'Full Name'}
                         i.e. {'action': 'edit_bio', 'data': 'something'}
                         i.e. {'action': 'edit_avatar', 'data': 'something'}
                         i.e. {'action': 'edit_skill_level', 'data': 'Expert', 'skill': 'skill_name'}
@@ -217,15 +214,14 @@ def format_user_details(full=False, fetch=None):
         # When not getting full details
         dict['user_id'] = user[0]
         dict['username'] = user[1]
-        dict['first_name'] = user[4]
-        dict['last_name'] = user[5]
-        dict['avatar'] = user[7]
-        dict['user_skills'] = user[8]
+        dict['full_name'] = user[4]
+        dict['avatar'] = user[6]
+        dict['user_skills'] = user[7]
         # When full=True
         if full:
             dict['email'] = user[2]
             dict['join_date'] = user[3].strftime('%m-%d-%Y')
-            dict['bio'] = user[6]
+            dict['bio'] = user[5]
         # Appending the dictionary into user_details list
         user_details.append(dict)
     return user_details
