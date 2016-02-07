@@ -64,7 +64,8 @@ class UserHandler(object):
                         (SELECT full_name FROM user_extras WHERE user_id = users.user_id),
                         (SELECT bio FROM user_extras WHERE user_id = users.user_id),
                         (SELECT avatar FROM user_extras WHERE user_id = users.user_id),
-                        array(SELECT skill FROM user_skills WHERE user_skills.user_id = users.user_id)
+                        array(SELECT skill FROM user_skills WHERE user_skills.user_id = users.user_id),
+                        array(SELECT level FROM user_skills WHERE user_skills.user_id = users.user_id)
                 FROM users
                 WHERE username = %s
                 """
@@ -219,6 +220,7 @@ def format_user_details(full=False, fetch=None):
         dict['full_name'] = user[4]
         dict['avatar'] = user[6]
         dict['user_skills'] = user[7]
+        dict['skill_levels'] = user[8]
         # When full=True
         if full:
             dict['email'] = user[2]

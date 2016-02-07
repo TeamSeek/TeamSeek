@@ -39,9 +39,11 @@ textarea:disabled {
 .skill {
   border-width: 1px;
   margin-right: 4px;
-  padding: 4px;
+  margin-left: 4px;
+  padding: 5px;
   border-radius: 12px;
   background-color: rgba(29, 144, 255, 0.42);
+  cursor: pointer;
 }
 .avatar {
   margin-right: 15px;
@@ -62,9 +64,19 @@ textarea:disabled {
   font-size: 16px;
   font-family:  "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
-#name-edit {
+#edit-input {
   background-color: white;
   color: black;
+}
+#Beginner {
+  background-color: yellow;
+}
+#Intermediate {
+  background-color: green; 
+}
+#Expert {
+  background-color: #A10ACB;
+  color: white;
 }
 </style>
 <div class="centerbox">
@@ -75,17 +87,17 @@ textarea:disabled {
         <div class="displayitem">
           <div style="margin: 20px 0 20px 0;">
             <a href="javascript:alert('Change avatar feature here');"><img class="avatar" src="{{user_details.avatar}}" /></a>
-            <input id="name-edit" v-model="user_details.full_name" v-if="editableName" v-on:blur="saveName()" value="{{user_details.full_name}}"/> 
+            <input id="edit-input" v-model="user_details.full_name" v-if="editableName" v-on:blur="saveName()" value="{{user_details.full_name}}"/> 
 						<span class="name-display" v-else>{{user_details.full_name}}</span>
             <span class="name-display">({{user}})</span>
 						<a class="edit-link" v-on:click="editName()" v-if="isOwnProfile && !editableName">Edit</a>
             <br />
-            <span>Email: </span>
-            <input id="email-edit" v-model="user_details.email" v-if="editableEmail" v-on:blur="saveEmail()" value="{{user_details.email}}"/>
+            <b>Email: </b>
+            <input id="edit-input" v-model="user_details.email" v-if="editableEmail" v-on:blur="saveEmail()" value="{{user_details.email}}"/>
             <span class="email-display" v-else>{{user_details.email}}</span>
             <span class="edit-link" v-on:click="editEmail()" v-if="isOwnProfile && !editableEmail">Edit</span>
             <br />
-            <span>Join date: </span>
+            <b>Join date: </b>
             <span class="joindate">{{user_details.join_date}}</span>
           </div>
 		      <p class="edit-link" style="text-align: right;" v-on:click="editBio()" v-if="isOwnProfile && !editableBio">Edit</p>
@@ -96,7 +108,8 @@ textarea:disabled {
             <button v-if="editableBio" class="accept-button" v-on:click="saveBio()">Save</button>
             <button v-if="editableBio" class="cancel-button" v-on:click="cancelBio()">Cancel</button>
             <div class="skillbox">
-              <span v-for="skill in user_details.user_skills" class="skill">{{skill}}</span>
+              <b>My Skills: </b>
+              <span v-for="skill in user_details.user_skills" v-on:click="changeLevel($index)" class="skill" id="{{user_details.skill_levels[$index]}}" >{{skill}}</span>
             </div>
           </div>
         </div>
@@ -210,6 +223,23 @@ var projectdisplay = new Vue({
         alert("There's something wrong while saving email");
       });
       this.editableEmail = false;
+    },
+    /* Changing skill level */
+    changeLevel: function(index) {
+      /* Edit skill_level at index location */
+      level = this.user_details.skill_levels[index];
+      level_map = {"Beginner": "Intermediate", "Intermediate": "Expert", "Expert": "Beginner"};
+      this.user_details.skill_levels[index] = level_map[level];
+      /* Update in database */
+      edit_skill_level = {"action": "edit_skill_level", "skill": this.user_details.user_skills[index], "data": level_map[level]};
+      this.$http.post('/api/users/', edit_skill_level).then(function (response) {
+        /* Do something here */
+      },
+      function (response) {
+        alert("There's something wrong while changing skill level");
+      });
+      /* Change skill color */
+      document.getElementById(level).id = level_map[level];
     }
   },
   data: {
