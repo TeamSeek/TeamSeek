@@ -224,7 +224,7 @@ def format_user_details(full=False, fetch=None):
         # When full=True
         if full:
             dict['email'] = user[2]
-            dict['join_date'] = user[3]
+            dict['join_date'] = user[3].strftime('%m-%d-%Y')
             dict['bio'] = user[6]
         # Appending the dictionary into user_details list
         user_details.append(dict)
