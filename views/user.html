@@ -26,6 +26,7 @@ textarea {
   font-size: inherit;
   height: 300px;
   padding: 0px;
+  color: black;
 }
 textarea:disabled {
   /* bio displayed in a text area even when not active */
@@ -42,6 +43,29 @@ textarea:disabled {
   border-radius: 12px;
   background-color: rgba(29, 144, 255, 0.42);
 }
+.avatar {
+  margin-right: 15px;
+	float: left;
+}
+.name-display {
+  font-size: 25px;
+  line-height: 35px;
+}
+.edit-link {
+  margin-left: 30px;
+  color: #1D90FF;
+  cursor: pointer;
+  line-height: 0;
+}
+.bio-display {
+  white-space: pre-wrap;
+  font-size: 16px;
+  font-family:  "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+#name-edit {
+  background-color: white;
+  color: black;
+}
 </style>
 <div class="centerbox">
   <div class="flexcenter">
@@ -49,17 +73,30 @@ textarea:disabled {
     <div class="bigitem">
       <div id="projectdisplay">
         <div class="displayitem">
-          <h2>
-            {{user}}<a class="topDetailLink" v-on:click="editBio()" v-if="isOwnProfile && !editableBio">Edit</a>
-          </h2>
+          <div style="margin: 20px 0 20px 0;">
+            <a href="javascript:alert('Change avatar feature here');"><img class="avatar" src="{{user_details.avatar}}" /></a>
+            <input id="name-edit" v-model="user_details.full_name" v-if="editableName" v-on:blur="saveName()" value="{{user_details.full_name}}"/> 
+						<span class="name-display" v-else>{{user_details.full_name}}</span>
+            <span class="name-display">({{user}})</span>
+						<a class="edit-link" v-on:click="editName()" v-if="isOwnProfile && !editableName">Edit</a>
+            <br />
+            <span>Email: </span>
+            <input id="email-edit" v-model="user_details.email" v-if="editableEmail" v-on:blur="saveEmail()" value="{{user_details.email}}"/>
+            <span class="email-display" v-else>{{user_details.email}}</span>
+            <span class="edit-link" v-on:click="editEmail()" v-if="isOwnProfile && !editableEmail">Edit</span>
+            <br />
+            <span>Join date: </span>
+            <span class="joindate">{{user_details.join_date}}</span>
+          </div>
+		      <p class="edit-link" style="text-align: right;" v-on:click="editBio()" v-if="isOwnProfile && !editableBio">Edit</p>
           <div id="bioEl" v-cloak>
-            <textarea v-if="editableBio" :spellcheck="editableBio" class="bio-edit"
-                      v-model="bio" :disabled="!editableBio">{{bio}}</textarea>
-            <div class="bio-display" v-else>{{bio}}</div>
+						<textarea v-if="editableBio" :spellcheck="editableBio" class="bio-edit"
+                      v-model="user_details.bio" :disabled="!editableBio">{{user_details.bio}}</textarea>
+            <pre class="bio-display" v-else>{{user_details.bio}}</pre>
             <button v-if="editableBio" class="accept-button" v-on:click="saveBio()">Save</button>
             <button v-if="editableBio" class="cancel-button" v-on:click="cancelBio()">Cancel</button>
             <div class="skillbox">
-              <span v-for="skill in user_skills" class="skill">{{skill}}</span>
+              <span v-for="skill in user_details.user_skills" class="skill">{{skill}}</span>
             </div>
           </div>
         </div>
@@ -116,9 +153,9 @@ var projectdisplay = new Vue({
     var user_details = {action:'user_details', username:_onload_data.user};
     this.$http.get('/api/users', user_details).then(function (response) {
       console.log(response.data);
-      this.user_skills = response.data.user_skills || [];
-      this.bio = 'User "' + _onload_data.user + '" has not yet made a bio!';
-      if (response.data.bio) this.bio = response.data.bio;
+			this.user_details = response.data || {};
+      if (response.data.bio) this.user_details.bio = response.data.bio;
+      else this.user_details.bio = 'User "' + _onload_data.user + '" has not yet made a bio!';
     }, function (response) {
       // error callback
       this.showSpinner = false;
@@ -126,12 +163,12 @@ var projectdisplay = new Vue({
   },
   methods: {
     editBio: function() {
-      this.oldBio = this.bio;
+      this.oldBio = this.user_details.bio;
       this.editableBio = true;
     },
     saveBio: function() {
       this.editableBio = false;
-      var edit_bio = {action:'edit_bio', data:this.bio};
+      var edit_bio = {action:'edit_bio', data:this.user_details.bio};
       this.$http.post('/api/users/', edit_bio).then(function (response) {
 
       }, function(response) {
@@ -139,16 +176,49 @@ var projectdisplay = new Vue({
       });
     },
     cancelBio: function() {
-      this.bio = this.oldBio;
+      this.user_details.bio = this.oldBio;
       this.editableBio = false;
+    },
+    /* enable input box for name */
+    editName: function() {
+      this.editableName = true;
+    },
+    /* saving name into database */
+    saveName: function() {
+      edit_full_name = {action: 'edit_full_name', data: this.user_details.full_name};
+      this.$http.post('/api/users/', edit_full_name).then(function (response) {
+       /* if saving is successful, do some commands here if necesssary */ 
+      }, 
+      /* if saving name failed */ 
+      function(response) {
+        alert("There's something wrong while saving name");
+      });
+      this.editableName = false;
+    },
+    /* enable input box for email */
+    editEmail: function() {
+      this.editableEmail = true;
+    },
+    /* saving email into database */
+    saveEmail: function() {
+      edit_email = {action: 'edit_email', data: this.user_details.email};
+      this.$http.post('/api/users/', edit_email).then(function (response) {
+        /* saving is successful, do something in here if necessary */
+      },
+      /* if saving failed somehow */
+      function(response) {
+        alert("There's something wrong while saving email");
+      });
+      this.editableEmail = false;
     }
   },
   data: {
     projects: [],
     myIdeas: [],
+    editableName: false,
+    editableEmail: false,
     editableBio: false,
-    bio: '',
-    user_skills: [],
+		user_details: {},
     oldBio: null, /* save old bio in case the users discards changes */
     user: _onload_data.user,
     isOwnProfile: _onload_data.isOwnProfile,
