@@ -14,6 +14,7 @@ class UserHandler(object):
         # [GET] Getting user's details
         'user_details': [],     # To get user's full details
         # [POST] Editing user's details
+        'edit_email': ['users', 'email'],
         'edit_full_name': ['user_extras', 'full_name'],
         'edit_bio': ['user_extras', 'bio'],
         'edit_avatar': ['user_extras', 'avatar'],
@@ -85,6 +86,7 @@ class UserHandler(object):
         Editing a particular user's detail
 
         :param params:  See _ACTION at the top of this file for list of actions
+                        i.e. {'action': 'edit_email', 'data': 'example@example.com'}
                         i.e. {'action': 'edit_full_name', 'data': 'Full Name'}
                         i.e. {'action': 'edit_bio', 'data': 'something'}
                         i.e. {'action': 'edit_avatar', 'data': 'something'}
