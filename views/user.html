@@ -48,6 +48,13 @@ textarea:disabled {
 .avatar {
   margin-right: 15px;
 	float: left;
+  cursor: pointer;
+  width: 80px;
+  height: 80px;
+}
+.avatar:hover {
+  background-color: white;
+  opacity: 0.8;
 }
 .name-display {
   font-size: 25px;
@@ -86,8 +93,9 @@ textarea:disabled {
       <div id="projectdisplay">
         <div class="displayitem">
           <div style="margin: 20px 0 20px 0;">
-            <a href="javascript:alert('Change avatar feature here');"><img class="avatar" src="{{user_details.avatar}}" /></a>
-            <input id="edit-input" v-model="user_details.full_name" v-if="editableName" v-on:blur="saveName()" value="{{user_details.full_name}}"/> 
+            <div class="avatar" v-on:click="editAvatar()">
+                <img id="avatar" class="avatar" src="{{user_details.avatar}}" />
+            </div>
 						<span class="name-display" v-else>{{user_details.full_name}}</span>
             <span class="name-display">({{user}})</span>
 						<a class="edit-link" v-on:click="editName()" v-if="isOwnProfile && !editableName">Edit</a>
@@ -233,13 +241,27 @@ var projectdisplay = new Vue({
       /* Update in database */
       edit_skill_level = {"action": "edit_skill_level", "skill": this.user_details.user_skills[index], "data": level_map[level]};
       this.$http.post('/api/users/', edit_skill_level).then(function (response) {
-        /* Do something here */
+        /* successful*/ 
+        if (!response)
+          /* Change skill color */
+          document.getElementById(level).id = level_map[level];
       },
       function (response) {
-        alert("There's something wrong while changing skill level");
+        alert(response);
       });
-      /* Change skill color */
-      document.getElementById(level).id = level_map[level];
+    },
+    /* Changing avatar */
+    editAvatar: function() {
+      var URL = prompt("Please enter new avatar's URL: ");
+      /* Update avatar in database */
+      edit_avatar = {"action": "edit_avatar", "data": URL};
+      this.$http.post('/api/users/', edit_avatar).then(function (response) {
+        /* Successful */
+        document.getElementById('avatar').src = URL;
+      },
+      function(response) {
+        alert("There's something wrong while changing avatar");
+      });
     }
   },
   data: {
