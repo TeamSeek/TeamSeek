@@ -1,5 +1,7 @@
 import cherrypy
 import json
+import requests
+import urlparse
 import os
 
 ALLOW_DEBUG_LOGIN = 'DEBUG_LOGIN' in os.environ
@@ -7,11 +9,24 @@ ALLOW_DEBUG_LOGIN = 'DEBUG_LOGIN' in os.environ
 # Default to true until sprint 1 is finished
 # TODO, delete these lines
 ALLOW_DEBUG_LOGIN = True
+with open('.githubAuth', 'r') as f:
+    data = json.load(f)
 
 class WebRoutes(object):
     @cherrypy.expose
     def github(self, **params):
-        return json.dumps({'error':'auth target not yet supported'})
+        payload = {'client_id' : data["clientID"], 'client_secret' : data["client_secret"], 'code' : params['code']}
+        # Use code to get access token
+        result = requests.post('https://github.com/login/oauth/access_token', data=payload)
+        parsedata = urlparse.parse_qs(result.text)
+        # Store access token in session
+        cherrypy.session['githubToken'] = parsedata["access_token"][0]
+        headers = {'content-type': 'application/json', 'Authorization':'token {0}'.format(cherrypy.session.get('githubToken'))}
+        # Use access token to get user info
+        result = requests.get('https://api.github.com/user', headers=headers)
+        # Store username in session
+        cherrypy.session['user'] = result.json()["login"]
+        raise cherrypy.HTTPRedirect("/")
     @cherrypy.expose
     def logout(self, **params):
         cherrypy.session.delete()

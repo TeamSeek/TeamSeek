@@ -1,5 +1,6 @@
 *.swp
 .dbauth
+.githubAuth
 
 __pycache__/
 *.py[cod]

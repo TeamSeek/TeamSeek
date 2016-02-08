@@ -15,6 +15,8 @@ Resolve all non mapped url targets
 """
 
 cache = PageCache()
+with open('.githubAuth', 'r') as f:
+    githubAuth = json.load(f)
 
 def createPage(session, params):
     # Render /create page
@@ -57,9 +59,10 @@ def render(path, params, session):
         return "Unrecognized url"
     if 'user' not in session:
         # If session info does not exist render the welcome page
+        welcome = cache.get('welcome').render({'client_id':githubAuth["clientID"], 'callbackURL':githubAuth["callbackURL"]})
         return cache.get('layout').render({
-            'page_body':cache.getRaw('welcome'),
-            'account_url': '/api/auth/login',
+            'page_body':welcome,
+            'account_url': 'https://github.com/login/oauth/authorize/?client_id={clientID}&redirect_uri={callbackURL}'.format(**githubAuth),
             'account_action': 'Log In'
         })
     else:
