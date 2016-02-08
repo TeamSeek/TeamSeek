@@ -242,9 +242,7 @@ var projectdisplay = new Vue({
       edit_skill_level = {"action": "edit_skill_level", "skill": this.user_details.user_skills[index], "data": level_map[level]};
       this.$http.post('/api/users/', edit_skill_level).then(function (response) {
         /* successful*/ 
-        if (!response)
-          /* Change skill color */
-          document.getElementById(level).id = level_map[level];
+        document.getElementById(level).id = level_map[level];
       },
       function (response) {
         alert(response);
