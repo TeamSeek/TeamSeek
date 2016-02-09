@@ -6,6 +6,8 @@ import feed
 import suggestions
 import users
 import skills
+import applications
+import notifications
 
 class WebRoutes(object):
     def __init__(self, db=None):
@@ -33,10 +35,19 @@ class WebRoutes(object):
             # mount /api/skills/ page
             self.skills = skills.SkillHandler(db)
 
+            # mount /api/applications/ page
+            # require:
+            #   Look into [GET]. [POST], [PUT], [DELETE] methods
+            self.applications = applications.ApplicationHandler(db)
+
+            # mount /api/notifications/ page
+            # require:
+            #   Look at [GET], [POST], [PUT], [DELETE] methods
+            self.notifications = notifications.NotificationHandler(db)
+
             # mount /api/auth/ page
             # maps /api/auth/github and /api/auth/debug
             self.auth = auth.WebRoutes()
-
         else:
             print "api.py >> Error: Invalid database connection"
 
