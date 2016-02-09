@@ -54,11 +54,44 @@ class ApplicationHandler(object):
             return json.dumps ({'error': 'Not enough data'})
 
         # Edit the application
+        # Also delete the notification
+        # Make sure to change it to call /api/notifications.py
+        # instead of doing it here.
         query = """
-                UPDATE applications SET status = %s WHERE id = %s RETURNING 
+                UPDATE notifications
+                SET (read, deleted) = (True, True)
+                WHERE recipient_id = (SELECT user_id FROM users WHERE username=%s)
+                AND sender_id = %s AND type_id = %s;
+                UPDATE applications SET status = %s WHERE id = %s RETURNING applicant_id, project_id;
                 """
+        self.cur.execute(query, (cherrypy.session['user'], params['id'], 
+                                 self.notification_type, 
+                                 params['status'], params['id'], ))
+        fetch = self.cur.fetchall()
+        applicant_id = fetch[0][0]
+        project_id = fetch[0][1]
 
-        return json.dumps({"error": "Currently not supported"})
+        # Edit user's working-on project
+        # If it's implemented later
+
+        # If status is denied, then don't do anything else
+        if not 'approved' == params['status']:
+            # Apply changes to database
+            self.db.connection.commit()
+            return json.dumps({})
+
+        # If status is approved
+        # Insert member into project
+        query = """
+                INSERT INTO project_members (project_id, member)
+                VALUES (%s, (SELECT username FROM users WHERE user_id = %s));
+                """
+        self.cur.execute(query, (project_id, applicant_id, ))
+
+        # Apply changes to database
+        self.db.connection.commit()
+
+        return json.dumps({})
 
     @cherrypy.tools.accept(media="text/plain")
     def PUT(self, **params):
@@ -77,13 +110,13 @@ class ApplicationHandler(object):
         # Add new applications to database
         # If accepted is not provided meaning that 
         # the application is still pending
-        query = """INSERT INTO applications (project_id, user_id, date_applied)
+        query = """INSERT INTO applications (project_id, applicant_id, date_applied)
                    VALUES (%s, (SELECT user_id FROM users WHERE username = %s), %s) 
                    RETURNING id, (SELECT user_id 
-                                                   FROM users 
-                                                   WHERE username = (SELECT owner 
-                                                                     FROM project_info 
-                                                                     WHERE project_info.project_id = applications.project_id));
+                                  FROM users 
+                                  WHERE username = (SELECT owner 
+                                                    FROM project_info 
+                                                    WHERE project_info.project_id = applications.project_id));
                 """
         self.cur.execute(query, (params['project_id'], username, date.today(), ))
         # Grab ID from the new application
@@ -97,7 +130,6 @@ class ApplicationHandler(object):
                     'sender_id': sender_id
                     }
         response = requests.put('http://localhost:8080/api/notifications/', params=request_params)
-        print response.text
         # Apply changes to database
         self.db.connection.commit()
         return json.dumps({})
