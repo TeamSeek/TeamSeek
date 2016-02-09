@@ -47,7 +47,7 @@ CREATE TABLE project_extras (
 CREATE TABLE applications (
     id SERIAL PRIMARY KEY,
 	project_id INT NOT NULL,
-	user_id INT NOT NULL,
+	applicant_id INT NOT NULL,
     status VARCHAR DEFAULT 'pending',
 	date_applied DATE NOT NULL
 	);
