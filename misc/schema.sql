@@ -56,3 +56,20 @@ CREATE TABLE skills (
     approved BOOLEAN,
     count INT
     );
+
+CREATE TABLE notifications (
+    id SERIAL PRIMARY KEY,
+    recipient_id INT,
+    sender_id INT,
+    type_id INT,
+    read BOOLEAN,
+    deleted BOOLEAN,
+    created_date DATE
+    );
+
+CREATE TABLE notification_type (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR,
+    description TEXT,
+    template TEXT
+    );
