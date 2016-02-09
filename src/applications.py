@@ -39,6 +39,25 @@ class ApplicationHandler(object):
 
     @cherrypy.tools.accept(media="text/plain")
     def POST(self, **params):
+        """
+        Accept or Deny an application and trigger new notification
+
+        Also handle user's working-on projects and project's members
+
+        params: i.e. {'action': 'edit_application', 'id': 'application id', 'status': 'pending/denied/approved'}
+        return: i.e. {} if successful, {'error': 'some error' if failed'}
+        """
+        # Check if everything is provided
+        if 'action' not in params or \
+           'id' not in params or \
+           'status' not in params:
+            return json.dumps ({'error': 'Not enough data'})
+
+        # Edit the application
+        query = """
+                UPDATE applications SET status = %s WHERE id = %s RETURNING 
+                """
+
         return json.dumps({"error": "Currently not supported"})
 
     @cherrypy.tools.accept(media="text/plain")
@@ -60,19 +79,17 @@ class ApplicationHandler(object):
         # the application is still pending
         query = """INSERT INTO applications (project_id, user_id, date_applied)
                    VALUES (%s, (SELECT user_id FROM users WHERE username = %s), %s) 
-                   RETURNING project_id, user_id, (SELECT user_id 
+                   RETURNING id, (SELECT user_id 
                                                    FROM users 
                                                    WHERE username = (SELECT owner 
                                                                      FROM project_info 
                                                                      WHERE project_info.project_id = applications.project_id));
                 """
         self.cur.execute(query, (params['project_id'], username, date.today(), ))
-        # Grab project ID from the new application
-        fetch = self.cur.fetchall()
-        project_id = fetch[0][0]
         # Grab ID from the new application
-        sender_id = fetch[0][1]
-        recipient_id = fetch[0][2]
+        fetch = self.cur.fetchall()
+        sender_id = fetch[0][0]
+        recipient_id = fetch[0][1]
         # Trigger notification
         request_params = {  'action': 'new_application',
                     'type_id': self.notification_type,
