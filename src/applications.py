@@ -35,7 +35,28 @@ class ApplicationHandler(object):
 
     @cherrypy.tools.accept(media="text/plain")
     def GET(self, **params):
-        return json.dumps({"error": "Currently not supported"})
+        """
+        Get application for notification
+
+        params: i.e {'action': 'get_application', 'ids': list of application ids}
+        return: a list of applications' details
+        """
+        # Check if everything is provided
+        if 'action' not in params:
+            return json.dumps({'error': 'Not enough data'})
+
+        # Form query for database
+        ids = tuple(params['ids'])
+        query = """
+                SELECT  id, project_id, 
+                        (SELECT title FROM project_info WHERE project_info.project_id = applications.project_id), 
+                        applicant_id, (SELECT username FROM users WHERE user_id = applicant_id), 
+                        status, date_applied
+                FROM applications
+                WHERE id IN %s;
+                """
+        self.cur.execute(query, (ids, ))
+        return json.dumps(format_application_details(self.cur.fetchall()))
 
     @cherrypy.tools.accept(media="text/plain")
     def POST(self, **params):
@@ -137,3 +158,22 @@ class ApplicationHandler(object):
     @cherrypy.tools.accept(media="text/plain")
     def DELETE(self, **params):
         return json.dumps({"error": "Currently not supported"})
+
+
+##########################
+# Helper functions       #
+##########################
+def format_application_details(fetch=None):
+    """ Formating applications into a list of dictionary """
+    application_details = []
+    for application in fetch:
+        dict = {}
+        dict['application_id'] = application[0]
+        dict['project_id'] = application[1]
+        dict['title'] = application[2]
+        dict['applicant_id'] = application[3]
+        dict['username'] = application[4]
+        dict['status'] = application[5]
+        dict['date_applied'] = application[6].strftime('%m-%d-%Y')
+        application_details.append(dict)
+    return application_details
