@@ -219,8 +219,12 @@ def format_user_details(full=False, fetch=None):
         dict['username'] = user[1]
         dict['full_name'] = user[4]
         dict['avatar'] = user[6]
-        dict['user_skills'] = user[7]
-        dict['skill_levels'] = user[8]
+        # Format skill into a list of dictionaries
+        # that have skill name and its level
+        user_skills = []
+        for skill, level in zip(user[7], user[8]):
+           user_skills.append({'name': skill, 'level': level}) 
+        dict['user_skills'] = user_skills
         # When full=True
         if full:
             dict['email'] = user[2]
