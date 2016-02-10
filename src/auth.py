@@ -6,9 +6,6 @@ import os
 
 ALLOW_DEBUG_LOGIN = 'DEBUG_LOGIN' in os.environ
 
-# Default to true until sprint 1 is finished
-# TODO, delete these lines
-ALLOW_DEBUG_LOGIN = True
 with open('.githubAuth', 'r') as f:
     data = json.load(f)
 
