@@ -48,6 +48,7 @@ textarea:disabled {
 .newskill {
   font-size: 27px;
   color: #9C9C9C;
+  cursor: pointer;
 }
 .avatar {
   margin-right: 15px;
@@ -79,13 +80,13 @@ textarea:disabled {
   background-color: white;
   color: black;
 }
-#Beginner {
+.Beginner {
   background-color: yellow;
 }
-#Intermediate {
+.Intermediate {
   background-color: green; 
 }
-#Expert {
+.Expert {
   background-color: #A10ACB;
   color: white;
 }
@@ -121,7 +122,7 @@ textarea:disabled {
             <button v-if="editableBio" class="cancel-button" v-on:click="cancelBio()">Cancel</button>
             <div class="skillbox">
               <b>My Skills: </b>
-              <span v-for="skill in user_details.user_skills" v-on:click="changeLevel($index)" class="skill" id="{{user_details.skill_levels[$index]}}" >{{skill}}</span>
+              <span v-for="skill in user_details.user_skills" v-on:click="changeLevel($index)" id="{{skill}}" class="skill {{user_details.skill_levels[$index]}}">{{skill}}</span>
               <i class="icon-plus-sign newskill" v-on:click="addSkill()" v-if="isOwnProfile"></i>
             </div>
           </div>
@@ -247,7 +248,7 @@ var projectdisplay = new Vue({
       edit_skill_level = {"action": "edit_skill_level", "skill": this.user_details.user_skills[index], "data": level_map[level]};
       this.$http.post('/api/users/', edit_skill_level).then(function (response) {
         /* successful*/ 
-        document.getElementById(level).id = level_map[level];
+        document.getElementById(this.user_details.user_skills[index]).className = "skill " + level_map[level];
       },
       function (response) {
         alert(response);
@@ -257,6 +258,7 @@ var projectdisplay = new Vue({
       skill = prompt('Enter skill name');
       console.log(skill);
       var addSkill = {action:'add_skill', skill:skill};
+      if (!skill) return;
       this.$http.put('/api/users/', addSkill).then(function (response) {
       },
       function(response) {
@@ -266,6 +268,7 @@ var projectdisplay = new Vue({
     /* Changing avatar */
     editAvatar: function() {
       var URL = prompt("Please enter new avatar's URL: ");
+      if (!URL) return;
       /* Update avatar in database */
       edit_avatar = {"action": "edit_avatar", "data": URL};
       this.$http.post('/api/users/', edit_avatar).then(function (response) {
