@@ -43,6 +43,8 @@ textarea:disabled {
   padding: 5px;
   border-radius: 12px;
   background-color: rgba(29, 144, 255, 0.42);
+}
+.pointer {
   cursor: pointer;
 }
 .newskill {
@@ -53,12 +55,10 @@ textarea:disabled {
 .avatar {
   margin-right: 15px;
 	float: left;
-  cursor: pointer;
   width: 80px;
   height: 80px;
 }
-.avatar:hover {
-  background-color: white;
+.hover:hover {
   opacity: 0.8;
 }
 .name-display {
@@ -98,9 +98,8 @@ textarea:disabled {
       <div id="projectdisplay">
         <div class="displayitem">
           <div style="margin: 20px 0 20px 0;">
-            <div class="avatar" v-on:click="editAvatar()">
-                <img id="avatar" class="avatar" src="{{user_details.avatar}}" />
-            </div>
+            <img class="avatar" v-on:click="editAvatar()" 
+                 v-bind:class="{'pointer': isOwnProfile, 'hover': isOwnProfile}" src="{{user_details.avatar}}" />
 						<span class="name-display" v-else>{{user_details.full_name}}</span>
             <span class="name-display">({{user}})</span>
 						<a class="edit-link" v-on:click="editName()" v-if="isOwnProfile && !editableName">Edit</a>
@@ -122,7 +121,7 @@ textarea:disabled {
             <button v-if="editableBio" class="cancel-button" v-on:click="cancelBio()">Cancel</button>
             <div class="skillbox">
               <b>My Skills: </b>
-              <span v-for="skill in user_details.user_skills" v-on:click="changeLevel($index)" id="{{skill}}" class="skill {{user_details.skill_levels[$index]}}">{{skill}}</span>
+              <span v-for="skill in user_details.user_skills" v-on:click="changeLevel($index)" class="skill {{skill.level}}" v-bind:class="{'pointer': isOwnProfile, 'hover': isOwnProfile}">{{skill.name}}</span>
               <i class="icon-plus-sign newskill" v-on:click="addSkill()" v-if="isOwnProfile"></i>
             </div>
           </div>
@@ -181,8 +180,12 @@ var projectdisplay = new Vue({
     this.$http.get('/api/users', user_details).then(function (response) {
       console.log(response.data);
 			this.user_details = response.data || {};
-      if (response.data.bio) this.user_details.bio = response.data.bio;
-      else this.user_details.bio = 'User "' + _onload_data.user + '" has not yet made a bio!';
+      if (!response.data.email)
+        this.user_details.email = 'None';
+      if (!response.data.bio) 
+        this.user_details.bio = 'User "' + _onload_data.user + '" has not yet made a bio!';
+      if (!response.data.avatar) 
+        this.user_details.avatar = 'http://www.gravatar.com/avatar/cabf11b4b39c76a47689a2db0f3458e9?d=identicon';
     }, function (response) {
       // error callback
       this.showSpinner = false;
@@ -241,14 +244,16 @@ var projectdisplay = new Vue({
     /* Changing skill level */
     changeLevel: function(index) {
       /* Edit skill_level at index location */
-      level = this.user_details.skill_levels[index];
+      /* Check if it's the user's profile */
+      if (!this.isOwnProfile) return;
       level_map = {"Beginner": "Intermediate", "Intermediate": "Expert", "Expert": "Beginner"};
-      this.user_details.skill_levels[index] = level_map[level];
+      this.user_details.user_skills[index].level = level_map[this.user_details.user_skills[index].level];
       /* Update in database */
-      edit_skill_level = {"action": "edit_skill_level", "skill": this.user_details.user_skills[index], "data": level_map[level]};
+      edit_skill_level = {"action": "edit_skill_level", 
+                          "skill": this.user_details.user_skills[index].name, 
+                          "data": this.user_details.user_skills[index].level};
       this.$http.post('/api/users/', edit_skill_level).then(function (response) {
         /* successful*/ 
-        document.getElementById(this.user_details.user_skills[index]).className = "skill " + level_map[level];
       },
       function (response) {
         alert(response);
@@ -267,13 +272,14 @@ var projectdisplay = new Vue({
     },
     /* Changing avatar */
     editAvatar: function() {
+      if (!this.isOwnProfile) return;
       var URL = prompt("Please enter new avatar's URL: ");
       if (!URL) return;
       /* Update avatar in database */
       edit_avatar = {"action": "edit_avatar", "data": URL};
       this.$http.post('/api/users/', edit_avatar).then(function (response) {
         /* Successful */
-        document.getElementById('avatar').src = URL;
+        this.user_details.avatar = URL;
       },
       function(response) {
         alert("There's something wrong while changing avatar");
