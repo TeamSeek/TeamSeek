@@ -11,12 +11,31 @@ from datetime import date
 
 class ApplicationHandler(object):
     """ Object for project's applications """
+    # Set notification type for application
+    notification_type = 1
+
+    # Only these _ACTIONs are allowed
+    _ACTION = {
+        # [GET] actions
+        '_GET': {
+            'get_application': [],
+            'my_applications': [],
+            'is_applied': [],
+        },
+        # [POST] actions
+        '_POST': {
+            'edit_application': [],
+        },
+        # [PUT] actions
+        '_PUT': {
+            'new_application': [],
+        }
+    }
 
     def __init__(self, db=None):
         """ Run these instructions when project is initialized """
         # Check if database is passed in
         if db:
-            self.notification_type = '1'
             self.db = db
             self.cur = db.connection.cursor()
         else:
@@ -38,25 +57,49 @@ class ApplicationHandler(object):
         """
         Get application for notification
 
-        params: i.e {'action': 'get_application', 'ids': list of application ids}
+        params: i.e. {'action': 'get_application', 'ids': list of application ids}
+                i.e. {'action': 'my_applications'}
+                i.e. {'action': 'is_applied', 'project_id': '5'}
         return: a list of applications' details
         """
         # Check if everything is provided
-        if 'action' not in params:
+        if 'action' not in params or params['action'] not in self._ACTION['_GET']:
             return json.dumps({'error': 'Not enough data'})
 
+        if (not 'my_applications' == params['action']) and \
+           ('ids' not in params and 'project_id' not in params):
+            return json.dumps({'error': 'Not enough data'})
         # Form query for database
-        ids = tuple(params['ids'])
+
         query = """
                 SELECT  id, project_id, 
                         (SELECT title FROM project_info WHERE project_info.project_id = applications.project_id), 
                         applicant_id, (SELECT username FROM users WHERE user_id = applicant_id), 
                         status, date_applied
                 FROM applications
-                WHERE id IN %s;
+
                 """
-        self.cur.execute(query, (ids, ))
-        return json.dumps(format_application_details(self.cur.fetchall()))
+        # If user is requesting his/her applications
+        if 'my_applications' == params['action']:
+            query_condition = "WHERE applicant_id = (SELECT user_id FROM users WHERE username = %s);"
+            query_params = (cherrypy.session['user'], )
+        # If user is requesting to check if she/he has already applied for a particular project
+        elif 'is_applied' == params['action']:
+            query_condition = """
+                              WHERE applicant_id = (SELECT user_id FROM users WHERE username = %s)
+                              AND project_id = %s; 
+                              """
+            query_params = (cherrypy.session['user'], params['project_id'], ) 
+        # If something else requests applications based on application ids (notification)
+        else:
+            query_condition = "WHERE id IN %s;"
+            query_params = (tuple(params['ids']), )
+
+        # Append the condition to query
+        query += query_condition
+        # Send query to database
+        self.cur.execute(query, query_params )
+        return json.dumps(format_application_details(self.cur.fetchall()), indent=4)
 
     @cherrypy.tools.accept(media="text/plain")
     def POST(self, **params):
@@ -70,6 +113,7 @@ class ApplicationHandler(object):
         """
         # Check if everything is provided
         if 'action' not in params or \
+           params['action'] not in self._ACTION['_POST'] or \
            'id' not in params or \
            'status' not in params:
             return json.dumps ({'error': 'Not enough data'})
@@ -124,6 +168,7 @@ class ApplicationHandler(object):
         """
         # Check if everything is provided
         if 'action' not in params or \
+           params['action'] not in self._ACTION['_PUT'] or \
            'project_id' not in params:
             return json.dumps({'error': 'Not enough data'})
 
