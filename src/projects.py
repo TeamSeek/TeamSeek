@@ -239,7 +239,7 @@ def format_project_details(full=False, cur=None, fetch=None):
                 'owner': project[2],
                 'short_desc': project[3],
                 'last_edit': str(project[4]),
-                'posted_date': str(project[5]),
+                'posted_date': project[5].strftime('%m-%d-%Y'),
                 'update': project[6],
                 'git_link': project[7],
                 'project_skills': project[8],
