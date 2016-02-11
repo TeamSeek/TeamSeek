@@ -6,6 +6,45 @@
   float: right;
   color: #1D90FF;
 }
+h1 {
+  margin: 20px 0 20px 0;
+  line-height: 20px;
+}
+#application .displayitem {
+  height: 100px;
+}
+.btn {
+  background: #3498db;
+  background-image: -webkit-linear-gradient(top, #3498db, #2980b9);
+  background-image: -moz-linear-gradient(top, #3498db, #2980b9);
+  background-image: -ms-linear-gradient(top, #3498db, #2980b9);
+  background-image: -o-linear-gradient(top, #3498db, #2980b9);
+  background-image: linear-gradient(to bottom, #3498db, #2980b9);
+  -webkit-border-radius: 28;
+  -moz-border-radius: 28;
+  border-radius: 28px;
+  text-shadow: 1px 2px 5px #666666;
+  font-family: Arial;
+  color: #ffffff;
+  font-size: 14px;
+  padding: 10px 20px 10px 20px;
+  text-decoration: none;
+  text-align: center;
+}
+.btn:hover {
+  background: #3cb0fd;
+  background-image: -webkit-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -moz-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -ms-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: -o-linear-gradient(top, #3cb0fd, #3498db);
+  background-image: linear-gradient(to bottom, #3cb0fd, #3498db);
+  text-decoration: none;
+  cursor: pointer;
+}
+.join-btn {
+  margin: 30px 0px 0px 0px;
+  width: 150px;
+}
 </style>
 <div class="centerbox">
   <div class="flexcenter">
@@ -13,24 +52,28 @@
     <div class="bigitem">
       <div class="displayitem">
         <div class="projectbox" id="projectbox">
+
           <div v-if="noneFound">
             <h1>Project Not Found!</h1>
             <a href="/">return home</a>
           </div>
+
           <div v-else v-cloak>
-            <img align=left v-bind:src="imageUrl">
+            <img align=left v-bind:src="project_details.avatar">
             </img>
-            <h1>{{title}}
+            <h1>{{project_details.title}}
               <a v-if="isOwnProject"
-              href="/create?project_id={{project_id}}&owner={{teamLeader}}&title={{title}}"
+              href="/create?project_id={{project_details.project_id}}&owner={{project_details.owner}}&title={{project_details.title}}"
               id="create-project">Edit</a>
             </h1>
-            <p>Team Leader: <a href="/{{teamLeader}}">{{teamLeader}}</a><p>
+            <span>Created on: {{project_details.posted_date}} </span><br /> 
             <div class="markdown">
-              <div v-html="long_desc | marked"></div>
+              <div v-html="project_details.long_desc | marked"></div>
             </div>
           </div>
+
         </div>
+        
         <div style="height:0px;">
           <span class="footer">
             <a href="#">About</a>
@@ -42,16 +85,17 @@
     </div>
     <!-- Right panel -->
     <div class="smallitem">
-      <div class="displayitem">
-        <h2>Notifications</h2>
-        <p><i>No new notifications</i></p>
+      <div id="application">
+        <div v-if="!isOwnProject" class="displayitem">
+          <div v-if="!isApplied" v-on:click="joinProject()" class="btn join-btn">Join This Project</div>
+          <p class="join-btn" v-else>You have applied for this project</p>
+        </div>
       </div>
       <div class="displayitem" id="members">
         <h2>Members</h2>
-        <div class="projectbox" v-for="member in memberArray">
-          <img align=left width=40px height=40px v-bind:src="member.imageUrl">
-          </img>
-          <p><a href="/{{member.name}}">{{member.name}}</a></p>
+        <div class="projectbox" v-for="member in member_list">
+          <a href="/{{member.username}}"><img align=left width=40px height=40px v-bind:src="member.avatar"/></a>
+          <a href="/{{member.username}}"><span style="font-size: 17px;">{{member.full_name}}</span><br /></a>
         </div>
       </div>
     </div>
@@ -65,39 +109,52 @@ function getGravatar(hashItem) {
   return gravatar.replace('MD5_HASH',md5);
 }
 
+Vue.http.options.emulateJSON = true;
+
 var members = new Vue({
   el: '#members',
   methods: {
+    getMembersDetails: function(owner, data) {
+      user_request = {'action': 'user_details', 'username': owner};
+      this.$http.get('/api/users/', user_request).then(function(response) {
+        /* if user doesn't have any avatar */
+        if (!response.data.avatar) 
+          response.data.avatar = 'https://cdn3.iconfinder.com/data/icons/business-pack-3/512/12-512.png';
+        response.data.full_name += ' (Leader)';
+        this.member_list.push(response.data);
+      });
+
+      for (index in data) {
+        user_request = {'action': 'user_details', 'username': data[index]};
+        this.$http.get('/api/users/', user_request).then(function(response) {
+          /* if user doens't have any avatar, use default ones */
+          if (!response.data.avatar)
+            response.data.avatar = 'https://cdn3.iconfinder.com/data/icons/business-pack-3/512/12-512.png';
+          this.member_list.push(response.data);
+        });
+      }
+    }
   },
   data: {
-    memberArray: []
+    member_list: []
   }
 });
 
 var projectbox = new Vue({
   el: '#projectbox',
   ready: function() {
-    this.$http.get('/api/projects', {action: 'project_details', user:_onload_data.user, title:_onload_data.title}).then(function(response) {
+    this.$http.get('/api/projects/', {action: 'project_details', user:_onload_data.user, title:_onload_data.title}).then(function(response) {
       if (!response.data || response.data.error) {
         this.noneFound = true;
       } else {
-        response.data = response.data[0]
-        this.imageUrl = getGravatar(_onload_data.user + '/' + _onload_data.title);
-        users = [];
-        if (response.data.project_members) {
-          // Display project owner as first member
-          response.data.project_members.unshift(response.data.owner);
-          for (index in response.data.project_members) {
-            var user = response.data.project_members[index];
-            users.push({name: user, imageUrl: getGravatar(user)});
-          }
-        }
-        members.memberArray = users;
-        this.teamLeader = response.data.owner;
-        this.long_desc = response.data.long_desc || '';
-        this.project_id = response.data.project_id || '';
-        this.title = response.data.title;
+        this.project_details = response.data[0];
+        /* If the project doesn't have any avatar, use default one */
+        if (!this.project_details.avatar)
+          this.project_details.avatar = 'http://www.gravatar.com/avatar/2ddcb18c2d8d42f043ed8765b039876e?d=identicon';
+        /* Now make sure we have the members' details */
+        members.getMembersDetails(this.project_details.owner, this.project_details.project_members);
       }
+      application.checkApplied();
     }, function() {
       console.log('failure');
     });
@@ -105,14 +162,41 @@ var projectbox = new Vue({
   filters: {
     marked: marked
   },
+  methods: {
+  },
   data: {
     noneFound: false,
-    long_desc: '',
     isOwnProject: _onload_data.isOwnProject,
-    teamLeader: '',
-    imageUrl: '',
-    title: '',
-    project_id: ''
+    project_details: {'long_desc': ''},
   }
 });
+
+var application = new Vue({
+  el: '#application',
+  ready: function() {
+  },
+  methods: {
+    joinProject: function() {
+      new_application = {'action': 'new_application', 'project_id': projectbox.project_details.project_id};
+      this.$http.put('/api/applications/', new_application).then(function(response) {
+        /* Successful */        
+        if (!response.data.error)
+          this.isApplied = true;
+      });
+    },
+    checkApplied: function() {
+      is_applied = {'action': 'is_applied', 'project_id': projectbox.project_details.project_id};
+      this.$http.get('/api/applications/', is_applied).then(function(response) {
+        if (response.data[0])
+          this.isApplied = true;
+    });
+
+    }
+  },
+  data: {
+    isApplied: false,
+    isOwnProject: _onload_data.isOwnProject
+  }
+});
+
 </script>
