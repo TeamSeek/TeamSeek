@@ -5,6 +5,12 @@ from datetime import date
 
 class NotificationHandler(object):
     """ This class handles adding, deleting, editing, and getting notifications """
+    # Mapping actions for the HTTP requests
+    _ACTION = {
+        'read': ['read', True],
+        'unread': ['read', False],
+        'delete': ['deleted', True]
+    }
 
     def __init__(self, db=None):
         """ Initializing object """
@@ -31,7 +37,30 @@ class NotificationHandler(object):
 
     @cherrypy.tools.accept(media="text/plain")
     def POST(self, **params):
-        return json.dumps({'error': 'Currently not supported'})
+        """ 
+        Mark notification as read/delete
+        
+        params: i.e. {'action': 'read', 'id': 'notification id'}
+                i.e. {'action': 'delete', 'id': 'notification id'}
+                i.e. {'action': 'unread', 'id': 'notification id'}
+        return: i.e. {} if successful, {'error': 'some error'} if failed
+        """
+        # Check if everything is provided
+        if 'action' not in params or \
+           'id' not in params:
+            return json.dumps({'error': 'Not enough data'})
+
+        # Grab everthing we need for query using _ACTION mapping
+        table = self._ACTION[params['action']][0]
+        value = self._ACTION[params['action']][1]
+
+        # Form a query for database
+        query = "UPDATE notifications SET {0} = {1} WHERE id = %s;".format(table, value)
+        self.cur.execute(query, (params['id'], ))
+        # Apply changes to database
+        self.db.connection.commit()
+
+        return json.dumps({})
 
     @cherrypy.tools.accept(media="text/plain")
     def PUT(self, **params):
