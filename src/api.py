@@ -47,7 +47,7 @@ class WebRoutes(object):
 
             # mount /api/auth/ page
             # maps /api/auth/github and /api/auth/debug
-            self.auth = auth.WebRoutes()
+            self.auth = auth.WebRoutes(db)
         else:
             print "api.py >> Error: Invalid database connection"
 
