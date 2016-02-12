@@ -265,6 +265,7 @@ var projectdisplay = new Vue({
       var addSkill = {action:'add_skill', skill:skill};
       if (!skill) return;
       this.$http.put('/api/users/', addSkill).then(function (response) {
+        this.user_details.user_skills.push({name:skill, level:'Beginner'});
       },
       function(response) {
         alert(response);
