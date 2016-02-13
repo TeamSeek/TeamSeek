@@ -8,6 +8,7 @@ import users
 import skills
 import applications
 import notifications
+import invitations
 
 class WebRoutes(object):
     def __init__(self, db=None):
@@ -44,6 +45,11 @@ class WebRoutes(object):
             # require:
             #   Look at [GET], [POST], [PUT], [DELETE] methods
             self.notifications = notifications.NotificationHandler(db)
+
+            # mount /api/invitations/ page
+            # require:
+            #   Look at [GET], [POST], [PUT], [DELETE] methods
+            self.invitations = invitations.InvitationHandler(db)
 
             # mount /api/auth/ page
             # maps /api/auth/github and /api/auth/debug

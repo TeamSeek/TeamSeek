@@ -74,3 +74,12 @@ CREATE TABLE notification_type (
     description TEXT,
     template TEXT
     );
+
+CREATE TABLE invitations (
+    id SERIAL PRIMARY KEY,
+    recipient_id INT NOT NULL,
+    sender_id INT NOT NULL,
+    project_id INT NOT NULL,
+    status VARCHAR NOT NULL DEFAULT 'pending',
+    sent_date DATE NOT NULL
+);
