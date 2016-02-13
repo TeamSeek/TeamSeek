@@ -76,7 +76,7 @@ textarea:disabled {
   font-size: 16px;
   font-family:  "Lato", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
-#edit-input {
+.edit-input {
   background-color: white;
   color: black;
 }
@@ -100,28 +100,33 @@ textarea:disabled {
           <div style="margin: 20px 0 20px 0;">
             <img class="avatar" v-on:click="editAvatar()" 
                  v-bind:class="{'pointer': isOwnProfile, 'hover': isOwnProfile}" src="{{user_details.avatar}}" />
-						<span class="name-display" v-else>{{user_details.full_name}}</span>
+						<span class="name-display" v-if="!editableName">{{user_details.full_name}}</span>
+            <input class="edit-input" v-model="user_details.full_name" v-else
+                   v-on:blur="saveName()" />
             <span class="name-display">({{user}})</span>
 						<a class="edit-link" v-on:click="editName()" v-if="isOwnProfile && !editableName">Edit</a>
             <br />
             <b>Email: </b>
-            <input id="edit-input" v-model="user_details.email" v-if="editableEmail" v-on:blur="saveEmail()" value="{{user_details.email}}"/>
+            <input class="edit-input" v-model="user_details.email" v-if="editableEmail"
+                   v-on:blur="saveEmail()" value="{{user_details.email}}"/>
             <span class="email-display" v-else>{{user_details.email}}</span>
             <span class="edit-link" v-on:click="editEmail()" v-if="isOwnProfile && !editableEmail">Edit</span>
             <br />
             <b>Join date: </b>
             <span class="joindate">{{user_details.join_date}}</span>
           </div>
-		      <p class="edit-link" style="text-align: right;" v-on:click="editBio()" v-if="isOwnProfile && !editableBio">Edit</p>
           <div id="bioEl" v-cloak>
 						<textarea v-if="editableBio" :spellcheck="editableBio" class="bio-edit"
                       v-model="user_details.bio" :disabled="!editableBio">{{user_details.bio}}</textarea>
             <pre class="bio-display" v-else>{{user_details.bio}}</pre>
+		        <p class="edit-link" style="text-align: right;" v-on:click="editBio()" v-if="isOwnProfile && !editableBio">Edit</p>
             <button v-if="editableBio" class="accept-button" v-on:click="saveBio()">Save</button>
             <button v-if="editableBio" class="cancel-button" v-on:click="cancelBio()">Cancel</button>
             <div class="skillbox">
               <b>My Skills: </b>
-              <span v-for="skill in user_details.user_skills" v-on:click="changeLevel($index)" class="skill {{skill.level}}" v-bind:class="{'pointer': isOwnProfile, 'hover': isOwnProfile}">{{skill.name}}</span>
+              <span v-for="skill in user_details.user_skills" v-on:click="changeLevel($index)"
+                    class="skill {{skill.level}}"
+                    v-bind:class="{'pointer': isOwnProfile, 'hover': isOwnProfile}">{{skill.name}}</span>
               <i class="icon-plus-sign newskill" v-on:click="addSkill()" v-if="isOwnProfile"></i>
             </div>
           </div>
@@ -178,8 +183,9 @@ var projectdisplay = new Vue({
     });
     var user_details = {action:'user_details', username:_onload_data.user};
     this.$http.get('/api/users', user_details).then(function (response) {
-      console.log(response.data);
 			this.user_details = response.data || {};
+      if (!response.data.full_name)
+        this.user_details.full_name = '';
       if (!response.data.email)
         this.user_details.email = 'None';
       if (!response.data.bio) 
@@ -261,7 +267,6 @@ var projectdisplay = new Vue({
     },
     addSkill: function() {
       skill = prompt('Enter skill name');
-      console.log(skill);
       var addSkill = {action:'add_skill', skill:skill};
       if (!skill) return;
       this.$http.put('/api/users/', addSkill).then(function (response) {
