@@ -1,11 +1,16 @@
 """ This file handles anything related to invitations to join a project """
 import cherrypy
 import json
-from datetime import date
 import requests
+from datetime import date
 
 class InvitationHandler(object):
     """ This class handles user's invitation to join a project """
+    # This is domain for calling notifications' API
+    # Currently set to dev's domain (http://localhost:8080)
+    # Will be changed to http://teamseek.io in the future when hosting
+    domain = 'http://localhost:8080'
+
     # Set notification type for requesting
     notification_type = 2
 
@@ -13,11 +18,9 @@ class InvitationHandler(object):
     _ACTION = {
         # [GET] method's actions
         '_GET': {
-            # Getting a history of who the user has invited
+            # Getting user's previous sent invitations 
             'my_invitations': '',
-            # Getting user's received invitations 
-            'get_invitations': '',
-            # Checking if the user has been invited
+            # Checking if a particular user has been invited to a particular project
             'is_invited': ''
         },
         # [POST] method's actions
@@ -60,8 +63,7 @@ class InvitationHandler(object):
 
         params: i.e. {'action': 'my_invitations'}
                 i.e. {'action': 'is_invited', 'user_id': '1', 'project_id': '3'}
-                i.e. {'action': 'get_invitations', 'ids': list of invitation ids}
-        return: {} if successful, {'error': 'some error'} if failed
+        return: list of invitations
         """
         # Check if everything is provided
         if 'action' not in params:
@@ -73,7 +75,7 @@ class InvitationHandler(object):
 
         # Form query for database 
         query = """
-                SELECT id, project_id, 
+                SELECT id, sender_id, (SELECT username FROM users WHERE user_id = sender_id), project_id, 
                        (SELECT title FROM project_info WHERE project_info.project_id = invitations.project_id),
                        recipient_id, 
                        (SELECT username FROM users WHERE user_id = recipient_id),
@@ -92,11 +94,6 @@ class InvitationHandler(object):
             query += "WHERE recipient_id = %s AND project_id = %s;"
             query_params = (params['user_id'], params['project_id'], )
 
-        # If user is requesting invitiations (based on a list of invitiation IDs, may be used for notifications)
-        if params['action'] == 'get_invitations':
-            query += "WHERE id IN %s;"
-            query_params = (tuple(params['ids']), )
-
         self.cur.execute(query, query_params)
         invitations = format_invitations(self.cur.fetchall())
         return json.dumps(invitations, indent=4)
@@ -106,13 +103,14 @@ class InvitationHandler(object):
         """
         Handles accepting, denying invitations
 
-        params: i.e. {'action': 'accept', 'invitation_id': '1'} 
-                i.e. {'action': 'deny', 'invitation_id': '1'}
+        params: i.e. {'action': 'accept', 'invitation_id': '1', 'notification_id': '2'} 
+                i.e. {'action': 'deny', 'invitation_id': '1', 'notification_id': '2'}
         return: {} if successful, {'error': 'some error'} if failed
         """
         # Check if everything is provided
         if 'action' not in params or \
-           'invitation_id' not in params: 
+           'invitation_id' not in params or \
+           'notification_id' not in params: 
             return json.dumps({'error': 'Not enough data'})
 
         # Make sure that the actions are allowed
@@ -131,20 +129,21 @@ class InvitationHandler(object):
                     RecipientName VARCHAR;
                     RecipientId INT;
                     ProjectID INT;
+                    in_status TEXT;
                 BEGIN
-                
                 LoggedUser = %s;
-
+                in_status = %s;
                 SELECT user_id, username INTO RecipientId, RecipientName FROM users WHERE username = LoggedUser;
 
                 UPDATE invitations 
-                SET status = %s 
+                SET status = in_status 
                 WHERE id = %s AND recipient_id = RecipientId
                 RETURNING project_id INTO ProjectID;
-
-                INSERT INTO project_members (project_id, member) 
-                VALUES (ProjectID, RecipientName);
-
+                
+                IF in_status = 'accepted' THEN
+                    INSERT INTO project_members (project_id, member) 
+                    VALUES (ProjectID, RecipientName);
+                END IF;
                 END
                 $$
                 """
@@ -156,7 +155,14 @@ class InvitationHandler(object):
 
         # Apply changes to database
         self.db.connection.commit()
-        return json.dumps({})
+
+        # Trigger notification
+        request_params = {
+            'action': 'delete',
+            'id': params['notification_id']
+        }
+        response = requests.post('{0}/api/notifications/'.format(self.domain), params=request_params)
+        return json.dumps(response.text)
 
     @cherrypy.tools.accept(media='text/plain')
     def PUT(self, **params):
@@ -213,9 +219,23 @@ class InvitationHandler(object):
             date.today(), )
         self.cur.execute(query, query_params)
 
+        # Grab returned values from database
+        recipient_id = params['user_id']
+        project_id = params['project_id']
+        invitation_id = self.cur.fetchall()[0][0] 
+        
         # Apply changes to database
         self.db.connection.commit()
-        return json.dumps({})
+        
+        # Trigger notificiation
+        request_params = {
+            'action': 'new_notification',
+            'type_id': self.notification_type, 
+            'recipient_id': recipient_id,
+            'sender_id': invitation_id 
+        }
+        response = requests.put('{0}/api/notifications/'.format(self.domain), params = request_params)
+        return json.dumps(response.text)
 
     @cherrypy.tools.accept(media='text/plain')
     def DELETE(self, **params):
@@ -225,7 +245,7 @@ class InvitationHandler(object):
 # Helper Functions   #
 ######################
 
-def format_invitations(fetch = None):
+def format_invitations(fetch = None, notification=False):
     # Initialize an empty list
     invitations = []
 
@@ -233,12 +253,16 @@ def format_invitations(fetch = None):
     for item in fetch:
         dict = {}
         dict['invitation_id'] = item[0]
-        dict['project_id'] = item[1]
-        dict['project_title'] = item[2]
-        dict['recipient_id'] = item[3]
-        dict['recipient_username'] = item[4]
-        dict['status'] = item[5]
-        dict['sent_date'] = item[6].strftime('%m-%d-%Y')
+        dict['sender_id'] = item[1]
+        dict['sender_username'] = item[2]
+        dict['project_id'] = item[3]
+        dict['project_title'] = item[4]
+        dict['recipient_id'] = item[5]
+        dict['recipient_username'] = item[6]
+        dict['status'] = item[7]
+        dict['sent_date'] = item[8].strftime('%m-%d-%Y')
+        if notification:
+            dict['notification_id'] = item[9]
         invitations.append(dict)
 
     return invitations
