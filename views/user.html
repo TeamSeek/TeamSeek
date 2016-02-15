@@ -35,6 +35,8 @@ textarea:disabled {
 
 .skillbox {
   margin-top: 15px;
+  line-height: 315%;
+  white-space: nowrap;
 }
 .skill {
   border-width: 1px;
@@ -90,7 +92,96 @@ textarea:disabled {
   background-color: #A10ACB;
   color: white;
 }
+
+.add-skill-box {
+  position: absolute;
+  width: 500px;
+  height: 333px;
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+  z-index: 10;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.24);
+}
+.add-skill-box input[type="text"] {
+  box-sizing: border-box;
+  font-size: 21px;
+  width: 100%;
+}
+
+.skill-autocomplete {
+  margin-top: 0px;
+  padding: 0px;
+  width: 100%;
+  height: 133px;
+  font-size: 21px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.skill-autocomplete > li {
+  list-style-type: none;
+}
+.skill-autocomplete > li:nth-child(odd) {
+  background-color: rgba(29, 144, 255, 0.16);
+}
+.skill-autocomplete > li:hover {
+  background-color: rgba(40, 185, 255, 0.45);
+}
 </style>
+
+<div id="skillOverlay">
+  <div class="dim-page" v-if="active"></div>
+  <div class="displayitem add-skill-box" v-if="active">
+    <h3>Add Skill</h3>
+    <input type="text" v-model="inputText" debounce="300" />
+    <ul class="skill-autocomplete">
+      <li v-for="suggestion in suggestions" v-on:click="addSkill($index)">{{suggestion}}</li>
+    </ul>
+    <button class="cancel-button" v-on:click="cancel()">Cancel</button>
+  </div>
+  <script>
+  var skillOverlay = new Vue({
+    el: '#skillOverlay',
+    watch: {
+      'inputText': function(data) {
+        this.$http.get('/api/skills/', {q: data}).then(function(response) {
+          this.suggestions = response.data;
+        }, function (error) {
+          alert(error);
+        });
+      }
+    },
+    methods: {
+      show: function(successHook) {
+        this.successHook = successHook;
+        this.inputText = '';
+        this.active = true;
+      },
+      cancel: function() {
+        this.active = false;
+      },
+      addSkill: function(skillIndex) {
+        var skill = this.suggestions[skillIndex].toLowerCase();
+        var addSkill = {action:'add_skill', skill:skill};
+        this.$http.put('/api/users/', addSkill).then(function (response) {
+          if (this.successHook) this.successHook(skill);
+          this.active = false;
+        },
+        function(response) {
+          alert(response);
+        });
+      }
+    },
+    data: {
+      active: false,
+      inputText: '',
+      suggestions: ["javascript", "java", "c#", "php", "android"]
+    }
+  });
+  </script>
+</div>
+
 <div class="centerbox">
   <div class="flexcenter">
     <!-- Left panel -->
@@ -122,13 +213,13 @@ textarea:disabled {
 		        <p class="edit-link" style="text-align: right;" v-on:click="editBio()" v-if="isOwnProfile && !editableBio">Edit</p>
             <button v-if="editableBio" class="accept-button" v-on:click="saveBio()">Save</button>
             <button v-if="editableBio" class="cancel-button" v-on:click="cancelBio()">Cancel</button>
+            <b>My Skills: </b>
             <div class="skillbox">
-              <b>My Skills: </b>
               <span v-for="skill in user_details.user_skills" v-on:click="changeLevel($index)"
                     class="skill {{skill.level}}"
                     v-bind:class="{'pointer': isOwnProfile, 'hover': isOwnProfile}">{{skill.name}}</span>
-              <i class="icon-plus-sign newskill" v-on:click="addSkill()" v-if="isOwnProfile"></i>
             </div>
+            <i class="icon-plus-sign newskill" v-on:click="addSkill()" v-if="isOwnProfile"></i>
           </div>
         </div>
         <div class="displayitem">
@@ -266,14 +357,10 @@ var projectdisplay = new Vue({
       });
     },
     addSkill: function() {
-      skill = prompt('Enter skill name');
-      var addSkill = {action:'add_skill', skill:skill};
-      if (!skill) return;
-      this.$http.put('/api/users/', addSkill).then(function (response) {
-        this.user_details.user_skills.push({name:skill, level:'Beginner'});
-      },
-      function(response) {
-        alert(response);
+      var that = this;
+      /* Render temporary skill tag when new skill is added serverside */
+      skillOverlay.show(function(skill) {
+        that.user_details.user_skills.push({name:skill, level:'Beginner'});
       });
     },
     /* Changing avatar */
