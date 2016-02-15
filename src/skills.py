@@ -57,7 +57,7 @@ class SkillHandler(object):
         """
         self.cur.execute(query, (params['q'] + "%",))          # Prevent SQL injection
         # Fetch the result returned by database
-        skills = self.cur.fetchall()
+        skills = [skill[0] for skill in self.cur.fetchall()]
         # Return the formatted of skills and used_counts
         return json.dumps(skills)
 
