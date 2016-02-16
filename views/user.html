@@ -131,7 +131,7 @@ textarea:disabled {
 </style>
 
 <div id="skillOverlay">
-  <div class="dim-page" v-if="active"></div>
+  <div class="dim-page" v-on:click="cancel()" v-if="active"></div>
   <div class="displayitem add-skill-box" v-if="active">
     <h3>Add Skill</h3>
     <input type="text" v-model="inputText" debounce="300" />
