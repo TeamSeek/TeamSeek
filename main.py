@@ -5,6 +5,7 @@ import cherrypy
 import json
 import os
 
+from src import create
 from src import slug
 from src import api
 from src import db
@@ -37,6 +38,9 @@ class Router(object):
     @cherrypy.expose
     def default(self, *path, **params):
         return slug.render(path, params, cherrypy.session)
+
+    # map /create/ target
+    create = create.WebRoutes()
 
     # mount the targets from api.WebRoutes at /api/
     api = api.WebRoutes(db)
