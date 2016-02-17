@@ -145,6 +145,10 @@ textarea:disabled {
     el: '#skillOverlay',
     watch: {
       'inputText': function(data) {
+        if (!data) {
+          this.suggestions = [];
+          return;
+        }
         this.$http.get('/api/skills/', {q: data}).then(function(response) {
           this.suggestions = response.data;
         }, function (error) {
@@ -176,7 +180,7 @@ textarea:disabled {
     data: {
       active: false,
       inputText: '',
-      suggestions: ["javascript", "java", "c#", "php", "android"]
+      suggestions: []
     }
   });
   </script>
