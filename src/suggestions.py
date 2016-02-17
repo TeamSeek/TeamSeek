@@ -7,9 +7,17 @@ import cherrypy
 import json
 import users
 
-""" This class handles the page /api/qualified_users/ """
 class QualifiedUsers(object):
+    """ This class handles the page /api/qualified_users/ """
+
+    # Allowed actions
+    _ACTION = {
+        '_GET': {
+            'qualified_users': ''
+        }
+    }
     def __init__(self, db=None):
+        """ Initializing object """
         if db:
             self.db = db
             self.cur = db.connection.cursor()
@@ -33,22 +41,27 @@ class QualifiedUsers(object):
         """
         Getting qualified users based on project_id
 
-        :param params: project_id
+        :param params: i.e. {'action': 'qualified_users', 'project_id': '1'}
         :return: all user details
         """
         # Check if project_id is provided
-        if 'project_id' not in params:
+        if 'action' not in params or \
+           'project_id' not in params:
             return json.dumps({"error": "Not enough data"})
+
+        # Check if action is allowed
+        if params['action'] not in self._ACTION['_GET']:
+            return json.dumps({'error': 'Action is not allowed'})
 
         # Fetch the users that fit for this project
         # based on skills
         query = """
                 SELECT  users.user_id, username, email, join_date,
-                        (SELECT first_name FROM user_extras WHERE user_id = users.user_id),
-                        (SELECT last_name FROM user_extras WHERE user_id = users.user_id),
+                        (SELECT full_name FROM user_extras WHERE user_id = users.user_id),
                         (SELECT bio FROM user_extras WHERE user_id = users.user_id),
                         (SELECT avatar FROM user_extras WHERE user_id = users.user_id),
-                        array(SELECT skill FROM user_skills WHERE user_skills.user_id = users.user_id)
+                        array(SELECT skill FROM user_skills WHERE user_skills.user_id = users.user_id),
+                        array(SELECT level FROM user_skills WHERE user_skills.user_id = users.user_id)
                 FROM users
                 WHERE users.user_id=ANY(SELECT user_skills.user_id
                                   FROM user_skills
@@ -64,7 +77,7 @@ class QualifiedUsers(object):
         if not fetch:
             return json.dumps([])
         # Grab all user_details returned from 'fetch'
-        user_details = users.format_user_details(full=False, fetch=fetch)
+        user_details = users.format_user_details(full=True, fetch=fetch)
         return json.dumps(user_details)
 
     """ POST request handler """

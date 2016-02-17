@@ -2,6 +2,18 @@
 .markdown {
   margin-top: 28px;
 }
+.avatar {
+  float: left;
+  padding-right: 20px;
+}
+.user-display {
+  margin-bottom: 20px;
+  height: 80px;
+}
+.full-name {
+  margin: 20px 0 5px 0;
+  font-size: 25px;
+}
 #create-project {
   float: right;
   color: #1D90FF;
@@ -57,7 +69,7 @@ h1 {
             <h1>Project Not Found!</h1>
             <a href="/">return home</a>
           </div>
-
+          <!-- Project details -->
           <div v-else v-cloak>
             <img align=left v-bind:src="project_details.avatar">
             </img>
@@ -71,17 +83,43 @@ h1 {
               <div v-html="project_details.long_desc | marked"></div>
             </div>
           </div>
-
-        </div>
-        
-        <div style="height:0px;">
-          <span class="footer">
-            <a href="#">About</a>
-            <a href="#">Contact</a>
-            <a href="#">Terms of service</a>
-          </span>
         </div>
       </div>
+      <!-- End project-details -->
+
+      <!-- Suggested users -->
+      <div id="suggested-users">
+        <div v-if="isOwnProject" class="displayitem">
+          <b><h2>Suggested Users</h2></b>
+          <div v-for="user in users"> 
+            <div class="user-display" v-if="init.user != user.username">
+              <div class="avatar">
+                <a href="/{{user.username}}/">
+                <img width=80px height=80px v-bind:src="user.avatar"/>
+                </a>
+              </div>
+              <a class="full-name" href="/{{user.username}}/">{{user.full_name}}</a>
+              <button style="margin-left: 30px;">Invite</button>
+              <button style="margin-left: 10px;">Contact</button>
+              <br />
+              <span>Joined on: {{user.join_date}}</span><br />
+              <span>Skills: </span>
+              <span v-for="skill in user.user_skills">{{skill.name}}, </span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- End suggested users -->
+
+      <!-- Footer under project details --> 
+      <div style="margin-left: 50px; height:0px;">
+        <span class="footer">
+          <a href="#">About</a>
+          <a href="#">Contact</a>
+          <a href="#">Terms of service</a>
+        </span>
+      </div>
+      <!-- End footer under project details -->
     </div>
     <!-- Right panel -->
     <div class="smallitem">
@@ -143,7 +181,8 @@ var members = new Vue({
 var projectbox = new Vue({
   el: '#projectbox',
   ready: function() {
-    this.$http.get('/api/projects/', {action: 'project_details', user:_onload_data.user, title:_onload_data.title}).then(function(response) {
+    request_params = {action: 'project_details', user:_onload_data.user, title:_onload_data.title};
+    this.$http.get('/api/projects/', request_params).then(function(response) {
       if (!response.data || response.data.error) {
         this.noneFound = true;
       } else {
@@ -155,6 +194,7 @@ var projectbox = new Vue({
         members.getMembersDetails(this.project_details.owner, this.project_details.project_members);
       }
       application.checkApplied();
+      SuggestedUsers.getUsers(this.project_details.project_id);
     }, function() {
       console.log('failure');
     });
@@ -173,8 +213,6 @@ var projectbox = new Vue({
 
 var application = new Vue({
   el: '#application',
-  ready: function() {
-  },
   methods: {
     joinProject: function() {
       new_application = {'action': 'new_application', 'project_id': projectbox.project_details.project_id};
@@ -199,4 +237,28 @@ var application = new Vue({
   }
 });
 
+var SuggestedUsers = new Vue({
+  el: '#suggested-users',
+  methods: {
+    getUsers: function(project_id) {
+      request_params = {'action': 'qualified_users', 'project_id': project_id};
+      this.$http.get('/api/suggestions/', request_params).then(function (response) {
+        // If failed
+        if (!response.data || response.data.error) {
+          console.log("Suggested Users:" + response.data.error);
+          return;
+        }
+        // If successful
+        this.users = response.data;
+        this.showSpinner = false;
+      });
+    }
+  },
+  data: {
+    isOwnProject: _onload_data.isOwnProject,
+    init: _onload_data,
+    users: [],
+    showSpinner: true
+  }
+});
 </script>
