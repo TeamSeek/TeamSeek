@@ -22,11 +22,11 @@ class WebRoutes(object):
             # require: cherrypy.session['user']
             self.feed = feed.ProjectFeeds(db)
 
-            # mount /api/qualified_users/ page
+            # mount /api/suggestions/ page
             # require:
             #   cherrypy.session['user']
             #   project_id
-            self.qualified_users = suggestions.QualifiedUsers(db)
+            self.suggestions = suggestions.QualifiedUsers(db)
 
             # mount /api/users/ page
             # require:
