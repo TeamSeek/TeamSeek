@@ -1,4 +1,10 @@
 <style>
+.meter {
+  width: 200px;
+  height: 10px;
+  padding: 3px 3px 3px 3px;
+  margin: 4px 170px;
+}
 .markdown {
   margin-top: 28px;
 }
@@ -57,7 +63,117 @@ h1 {
   margin: 30px 0px 0px 0px;
   width: 150px;
 }
+.skillbox{
+  margin-top: 15px;
+  line-height: 315%;
+  white-space: nowrap;
+  overflow: auto;
+  width: 608px;
+}
+.skill {
+  padding: 3px 5px 5px 5px;
+  background-color: #1EC7FF;
+  border-radius: 10px;
+  margin: 0 5px 0 5px;
+}
+.newskill {
+  font-size: 27px;
+  color: #9C9C9C;
+  cursor: pointer;
+}
+.add-skill-box {
+  position: fixed;
+  width: 500px;
+  height: 333px;
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+  z-index: 10;
+  box-shadow: 0 0 25px rgba(0, 0, 0, 0.24);
+}
+.add-skill-box input[type="text"] {
+  box-sizing: border-box;
+  font-size: 21px;
+  width: 100%;
+}
+
+.skill-autocomplete {
+  margin-top: 0px;
+  padding: 0px;
+  width: 100%;
+  height: 133px;
+  font-size: 21px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+.skill-autocomplete > li {
+  list-style-type: none;
+}
+.skill-autocomplete > li:nth-child(odd) {
+  background-color: rgba(29, 144, 255, 0.16);
+}
+.skill-autocomplete > li:hover {
+  background-color: rgba(40, 185, 255, 0.45);
+  cursor: pointer;
+}
 </style>
+<div id="skillOverlay">
+  <div class="dim-page" v-on:click="cancel()" v-if="active"></div>
+  <div class="displayitem add-skill-box" v-if="active">
+    <h3>Add Skill</h3>
+    <input type="text" v-model="inputText" debounce="300" />
+    <ul class="skill-autocomplete">
+      <li v-for="suggestion in suggestions" v-on:click="addSkill($index)">{{suggestion}}</li>
+    </ul>
+    <button class="cancel-button" v-on:click="cancel()">Cancel</button>
+  </div>
+  <script>
+  var skillOverlay = new Vue({
+    el: '#skillOverlay',
+    watch: {
+      'inputText': function(data) {
+        if (!data) {
+          this.suggestions = [];
+          return;
+        }
+        this.$http.get('/api/skills/', {q: data}).then(function(response) {
+          this.suggestions = response.data;
+        }, function (error) {
+          alert(error);
+        });
+      }
+    },
+    methods: {
+      show: function(successHook) {
+        this.successHook = successHook;
+        this.inputText = '';
+        this.active = true;
+      },
+      cancel: function() {
+        this.active = false;
+      },
+      addSkill: function(skillIndex) {
+        var skill = this.suggestions[skillIndex].toLowerCase();
+        var addSkill = {action:'add_skill', data:skill, project_id: projectbox.project_details.project_id};
+        this.$http.put('/api/projects/', addSkill).then(function (response) {
+          if (this.successHook) this.successHook(skill);
+          this.active = false;
+        },
+        function(response) {
+          alert(response);
+        });
+      }
+    },
+    data: {
+      active: false,
+      inputText: '',
+      suggestions: []
+    }
+  });
+  </script>
+</div>
+
 <div class="centerbox">
   <div class="flexcenter">
     <!-- Left panel -->
@@ -79,13 +195,19 @@ h1 {
               id="create-project">Edit</a>
             </h1>
             <span>Created on: {{project_details.posted_date}} </span><br /> 
+            <span style="position: absolute;">Progress: </span>
+            <div title="25%" class="meter">
+              <span style="width: 25%"></span>
+            </div>
             <div class="markdown">
               <div v-html="project_details.long_desc | marked"></div>
             </div>
-            <h3>Progress:</h3>
-            <div class="meter">
-              <span style="width: 25%"></span>
+            <div class="skillbox" v-if="project_details.project_skills != []"> 
+              <label>Skill: </label>
+              <span class="skill" v-for="skill in project_details.project_skills">{{skill}}</span>
             </div>
+            <i class="icon-plus-sign newskill" title="Add skill" v-on:click="addSkill()" v-if="isOwnProject"></i>
+            <br />
           </div>
         </div>
       </div>
@@ -207,6 +329,13 @@ var projectbox = new Vue({
     marked: marked
   },
   methods: {
+    addSkill: function(skill) {
+      var that = this;
+      /* Render temporary skill tag when new skill is added serverside */
+      skillOverlay.show(function(skill) {
+        that.project_details.project_skills.push(skill);
+      });
+    } 
   },
   data: {
     noneFound: false,
@@ -254,7 +383,6 @@ var SuggestedUsers = new Vue({
         }
         // If successful
         this.users = response.data;
-        this.showSpinner = false;
       });
     }
   },
@@ -262,7 +390,6 @@ var SuggestedUsers = new Vue({
     isOwnProject: _onload_data.isOwnProject,
     init: _onload_data,
     users: [],
-    showSpinner: true
   }
 });
 </script>
