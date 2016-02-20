@@ -312,7 +312,7 @@ var projectbox = new Vue({
       if (!response.data || response.data.error) {
         this.noneFound = true;
       } else {
-        this.project_details = response.data[0];
+        this.project_details = response.data;
         /* If the project doesn't have any avatar, use default one */
         if (!this.project_details.avatar)
           this.project_details.avatar = 'http://www.gravatar.com/avatar/2ddcb18c2d8d42f043ed8765b039876e?d=identicon';

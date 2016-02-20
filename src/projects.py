@@ -3,6 +3,7 @@ This file handles anything related to projects
 such as editing project's details, adding projects, getting project's details
 """
 
+import psycopg2.extras
 import cherrypy
 import json
 from datetime import date
@@ -78,36 +79,33 @@ class ProjectHandler(object):
 
         # Getting project's details
         query = """
-                SELECT	project_id, title, owner, short_desc, last_edit, posted_date,
+                SELECT	project_id, title, owner, short_desc,
+                        to_char(last_edit, 'MM-DD-YY') as last_edit,
+                        to_char(posted_date, 'MM-DD-YY') as posted_date,
                         (SELECT update FROM project_extras WHERE project_id=project_info.project_id),
                         (SELECT git_link FROM project_extras WHERE project_id=project_info.project_id),
                         array(SELECT skill FROM project_skills WHERE project_id=project_info.project_id),
                         array(SELECT member FROM project_members WHERE project_id=project_info.project_id),
-                        long_desc
+                        long_desc, progress
                 FROM    project_info
-                WHERE owner = %s
+                WHERE owner = %s AND title LIKE %s
                 """
-        # Fetching the owner's project if not a particular project
-        self.cur.execute(query, (user, ))     # Prevent SQL injection
+
+        # Create new dictionary cursor
+        dCur = self.db.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
         # If fetching a particular project details
         if 'project_details' == params['action']:
-            query += " AND title = %s"
-            self.cur.execute(query, (params['user'], params['title'], ))
-            full = True
+            dCur.execute(query, (params['user'], params['title']))
+            result = dCur.fetchone()
+            if not result:
+                raise cherrypy.HTTPError(404)
+        # If fetching all projects from an owner
+        else:
+            dCur.execute(query, (user,'%'))
+            result = dCur.fetchall()
 
-        # Get the data from database
-        fetch = self.cur.fetchall()
-
-        # No project that fits description (my_projects or project_details)
-        if not fetch:
-            return json.dumps([])
-
-        # Format project details
-        project_details = format_project_details(full=full, cur=self.cur, fetch=fetch)
-
-        # print json.dumps(project_details, indent=4)  # for debugging
-        return json.dumps(project_details, indent=4)   # for returning on webpage
+        return json.dumps(result)
 
     """ [POST] request handler """
     def POST(self, **params):

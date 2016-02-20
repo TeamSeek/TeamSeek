@@ -26,7 +26,8 @@ CREATE TABLE project_info (
 	long_desc TEXT,
 	last_edit DATE,
 	posted_date DATE NOT NULL
-);
+  progress INT
+	);
 
 CREATE TABLE project_skills (
     project_id INT NOT NULL,
