@@ -17,22 +17,31 @@ class ProjectHandler(object):
     # i.e 'edit_title': ['table name', 'column name']
     _ACTION = {
         # [GET] Getting project's details
-        'project_details': [],  # params: action, title, user
-        'my_projects': [],      # params: action, owner (optional)
+        '_GET': {
+            'project_details': [], 
+            'my_projects': [] 
+        },
         # [POST] Editing project's details
         # params: action, project_id, data
-        'edit_title': ['project_info', 'title'],
-        'edit_short_desc': ['project_info', 'short_desc'],
-        'edit_long_desc': ['project_info', 'long_desc'],
-        'edit_update': ['project_extras', 'update'],
-        'edit_git_link': ['project_extras', 'git_link'],
+        '_POST': {
+            'edit_title': ['project_info', 'title'],
+            'edit_short_desc': ['project_info', 'short_desc'],
+            'edit_long_desc': ['project_info', 'long_desc'],
+            'edit_update': ['project_extras', 'update'],
+            'edit_git_link': ['project_extras', 'git_link']
+        },
         # [PUT] creating new projects or adding new project details
-        'new_project': [],
-        'add_member': ['project_members', 'member'],
-        'add_skill': ['project_skills', 'skill'],
+        '_PUT': {
+            'new_project': [],
+            'add_member': ['project_members', 'member'],
+            'add_skill': ['project_skills', 'skill'],
+            'add_cmt': [] 
+        },
         # [DELETE] Deleting project or project's details
-        'delete_skill': ['project_skills', 'skill'],
-        'delete_member': ['project_members', 'member']
+        '_DELETE': {
+            'delete_skill': ['project_skills', 'skill'],
+            'delete_member': ['project_members', 'member']
+        }
     }
 
     def __init__(self, db=None):
@@ -77,6 +86,10 @@ class ProjectHandler(object):
            ('title' not in params or 'user' not in params):
             return json.dumps({"error": "Not enough data"})
 
+        # Check if action is allowed
+        if params['action'] not in self._ACTION['_GET']:
+            return json.dumps({'error': 'Action is not allowed'})
+
         # Getting project's details
         query = """
                 SELECT	project_id, title, owner, short_desc,
@@ -84,8 +97,8 @@ class ProjectHandler(object):
                         to_char(posted_date, 'MM-DD-YY') as posted_date,
                         (SELECT update FROM project_extras WHERE project_id=project_info.project_id),
                         (SELECT git_link FROM project_extras WHERE project_id=project_info.project_id),
-                        array(SELECT skill FROM project_skills WHERE project_id=project_info.project_id),
-                        array(SELECT member FROM project_members WHERE project_id=project_info.project_id),
+                        array(SELECT skill FROM project_skills WHERE project_id=project_info.project_id) AS project_skills,
+                        array(SELECT member FROM project_members WHERE project_id=project_info.project_id) AS project_members,
                         long_desc, progress
                 FROM    project_info
                 WHERE owner = %s AND title LIKE %s
@@ -105,7 +118,7 @@ class ProjectHandler(object):
             dCur.execute(query, (user,'%'))
             result = dCur.fetchall()
 
-        return json.dumps(result)
+        return json.dumps(result, indent = 4)
 
     """ [POST] request handler """
     def POST(self, **params):
@@ -122,6 +135,10 @@ class ProjectHandler(object):
            'project_id' not in params or \
            'data' not in params:
             return json.dumps({"error": "Not enough data"})
+
+        # Check if action is allowed
+        if params['action'] not in self._ACTION['_POST']:
+            return json.dumps({'error': 'Action is not allowed'})
 
         # Get everything needed to edit
         action = params['action']
@@ -166,17 +183,29 @@ class ProjectHandler(object):
             i.e. {'action': 'new_project', 'title': 'new title'}
             i.e. {'action': 'add_member', 'data': 'new member', 'project_id': '1'}
             i.e. {'action': 'add_skill', 'data': 'new skill', 'project_id': '1'}
+            i.e. {'action': 'add_cmt', 'data': 'Comment', 'project_id': '1'}
 
         :return : {} if successful, {"error": "some error"}
         """
         # Check if everything is provided
         if 'action' not in params or \
           ('title' not in params and
-          ('member' not in params or 'skill' not in params) and
-           'project_id' not in params):
+           ('data' not in params or 'project_id' not in params)):
             return json.dumps({"error": "Not enough data"})
 
-        # If creating new user
+        # Check if action is allowed
+        if params['action'] not in self._ACTION['_PUT']:
+            return json.dumps({'error': 'Action is not allowed'})
+        
+        # If action is add comments
+        if params['action'] == 'add_cmt':
+            dCur = self.db.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+            msg = add_comment(dCur, params['data'], params['project_id'])
+            # Apply changes to database
+            self.db.connection.commit()
+            return json.dumps(msg)
+
+        # If creating new project
         if 'new_project' == params['action']:
             add_new_project(self.cur, cherrypy.session['user'], params['title'])
             # Apply changes
@@ -212,6 +241,9 @@ class ProjectHandler(object):
            'project_id' not in params:
             return json.dumps({"error": "Not enough data"})
 
+        # Check if action is allowed
+        if params['action'] not in self._ACTION['_DELETE']:
+            return json.dumps({'error': 'Action is not allowed'})
         # Prepare everything we need
         table = self._ACTION[params['action']][0]
         column = self._ACTION[params['action']][1]
@@ -274,3 +306,19 @@ def add_new_project(cur=None, owner=None, title=None):
             """
     cur.execute(query, (title, owner, title, owner, date.today(), title, owner, ))
     return
+
+# Adding comments
+def add_comment(dCur=None, cmt=None, project_id=None):
+    """ Adding comment into a particular project """
+    # If comment is blank, do not add!
+    if not cmt:
+        return json.dumps({"error": "Comment cannot be blank"})
+
+    # Start adding comment into database
+    query = """
+            INSERT INTO project_cmts (project_id, poster_id, cmt, cmt_time)
+            VALUES (%s, (SELECT user_id FROM users WHERE username = %s), %s, %s) RETURNING id;
+            """
+    dCur.execute(query, (project_id, cherrypy.session['user'], cmt, date.today(), ))
+    msg = dCur.fetchone()
+    return msg
