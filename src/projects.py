@@ -102,8 +102,10 @@ class ProjectHandler(object):
             query = """
                     SELECT  id, poster_id as user_id,
                             (SELECT username FROM users WHERE user_id = poster_id),
+                            avatar, full_name,
                             cmt as comment, to_char(cmt_time, 'MM-DD-YY HH:MI:SS') as cmt_time 
                     FROM project_cmts
+                    LEFT JOIN user_extras ON (user_id = poster_id)
                     WHERE project_id = %s
                     ORDER BY cmt_time DESC;
                     """
