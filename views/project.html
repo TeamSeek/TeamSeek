@@ -117,6 +117,15 @@ h1 {
   background-color: rgba(40, 185, 255, 0.45);
   cursor: pointer;
 }
+
+.comment-box {
+  padding: 10px 0 10px 0;
+  border-bottom: 1px solid #CFCFCF;
+}
+.comment {
+  margin-left: 50px;
+  margin-top: 5px;
+}
 </style>
 <div id="skillOverlay">
   <div class="dim-page" v-on:click="cancel()" v-if="active"></div>
@@ -237,6 +246,27 @@ h1 {
       </div>
       <!-- End suggested users -->
 
+      <!-- Project's comments -->
+      <div id="project-comments">
+        <div class="displayitem">
+          <b><h2>Comments: </h2></b>
+          <div v-if="!noneFound"> 
+            <div class="comment-box" v-for="cmt in comments">
+              <a href="/{{cmt.username}}/">
+                <img style="margin-top: 5px;" width=30px height=30px v-bind:src="cmt.avatar" class="avatar"/>
+                <span style="font-size: 20px; height: 30px;">{{cmt.full_name}}</span>
+              </a>
+              <div style="float: right; margin-right: 10px; color: #A8A8A8">Posted on: {{cmt.cmt_time}}</div>
+              <div class="comment">{{cmt.comment}}</div>
+            </div>
+          </div>
+          <span style="font-size: 17px;" v-else>
+              There's no comment for this project yet.
+          </span>
+        </div>
+      </div>
+      <!-- End of project's comments -->
+
       <!-- Footer under project details --> 
       <div style="margin-left: 50px; height:0px;">
         <span class="footer">
@@ -321,6 +351,7 @@ var projectbox = new Vue({
       }
       application.checkApplied();
       SuggestedUsers.getUsers(this.project_details.project_id);
+      ProjectComments.getComments(this.project_details.project_id);
     }, function() {
       console.log('failure');
     });
@@ -390,6 +421,32 @@ var SuggestedUsers = new Vue({
     isOwnProject: _onload_data.isOwnProject,
     init: _onload_data,
     users: [],
+  }
+});
+
+var ProjectComments = new Vue ( {
+  el: '#project-comments',
+  methods: {
+    getComments: function(project_id) {
+      // Getting project's comments
+      // This function is called by projectbox's Vue
+      request_params = {'action': 'project_cmts', 'project_id': project_id};
+      this.$http.get('/api/projects/', request_params).then(function (response) {
+        // If failed to fetch comments
+        if (!response.data[0] || response.data.error) {
+          err = response.data.error || "No comments found";
+          console.log("ProjectComments:", err);
+          return;
+        }
+        // If comments are successfully fetched
+        this.comments = response.data;
+        this.noneFound = false;
+      });
+    }
+  },
+  data: {
+    noneFound: true,
+    comments: []
   }
 });
 </script>
