@@ -7,6 +7,7 @@ import psycopg2.extras
 import cherrypy
 import json
 from datetime import date
+from datetime import datetime
 
 """ Handling projects """
 class ProjectHandler(object):
@@ -19,7 +20,8 @@ class ProjectHandler(object):
         # [GET] Getting project's details
         '_GET': {
             'project_details': [], 
-            'my_projects': [] 
+            'my_projects': [], 
+            'project_cmts': ''
         },
         # [POST] Editing project's details
         # params: action, project_id, data
@@ -72,6 +74,7 @@ class ProjectHandler(object):
         :params: Checking _ACTION for a list of action
             i.e {'action': 'project_details', 'title': 'some title', 'user': 'some users'}
             i.e {'action': 'my_projects'}
+            i.e {'action': 'project_cmts', 'project_id': '1'}
         """
         full = False
         # Grab user that's logged on
@@ -83,12 +86,31 @@ class ProjectHandler(object):
 
         # Check if everything is provided
         if 'action' not in params and \
-           ('title' not in params or 'user' not in params):
+           ('title' not in params or 'user' not in params) and \
+           'project_id' not in params:
             return json.dumps({"error": "Not enough data"})
 
         # Check if action is allowed
         if params['action'] not in self._ACTION['_GET']:
             return json.dumps({'error': 'Action is not allowed'})
+
+        # Create new dictionary cursor
+        dCur = self.db.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        # If grabbing project's comments
+        if params['action'] == 'project_cmts':
+            query = """
+                    SELECT  id, poster_id as user_id,
+                            (SELECT username FROM users WHERE user_id = poster_id),
+                            cmt as comment, to_char(cmt_time, 'MM-DD-YY HH:MI:SS') as cmt_time 
+                    FROM project_cmts
+                    WHERE project_id = %s
+                    ORDER BY cmt_time DESC;
+                    """
+            dCur.execute(query, (params['project_id'], ))
+            # Get results from database returned data
+            results = dCur.fetchall()
+            return json.dumps(results, indent = 4)
 
         # Getting project's details
         query = """
@@ -102,10 +124,8 @@ class ProjectHandler(object):
                         long_desc, progress
                 FROM    project_info
                 WHERE owner = %s AND title LIKE %s
+                ORDER BY posted_date DESC;
                 """
-
-        # Create new dictionary cursor
-        dCur = self.db.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
         # If fetching a particular project details
         if 'project_details' == params['action']:
@@ -319,6 +339,6 @@ def add_comment(dCur=None, cmt=None, project_id=None):
             INSERT INTO project_cmts (project_id, poster_id, cmt, cmt_time)
             VALUES (%s, (SELECT user_id FROM users WHERE username = %s), %s, %s) RETURNING id;
             """
-    dCur.execute(query, (project_id, cherrypy.session['user'], cmt, date.today(), ))
+    dCur.execute(query, (project_id, cherrypy.session['user'], cmt, datetime.now(), ))
     msg = dCur.fetchone()
     return msg
