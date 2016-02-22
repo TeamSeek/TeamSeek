@@ -165,9 +165,9 @@ class ProjectHandler(object):
         # Get everything needed to edit
         action = params['action']
         # Mapping table using _ACTION variable above
-        table = self._ACTION[action][0]
+        table = self._ACTION['_POST'][action][0]
         # Mapping column using _ACTION variable above
-        column = self._ACTION[action][1]
+        column = self._ACTION['_POST'][action][1]
         # Get project_id from params
         project_id = params['project_id']
         # Get data from params
@@ -236,8 +236,8 @@ class ProjectHandler(object):
 
         # Add member and skill to database
         # Prepare everything we need
-        table = self._ACTION[params['action']][0]
-        column = self._ACTION[params['action']][1]
+        table = self._ACTION['_PUT'][params['action']][0]
+        column = self._ACTION['_PUT'][params['action']][1]
 
         # Adding based on the action provided
         query = "INSERT INTO " + table + " (project_id, " + column + ") VALUES (%s, %s);"
@@ -267,8 +267,8 @@ class ProjectHandler(object):
         if params['action'] not in self._ACTION['_DELETE']:
             return json.dumps({'error': 'Action is not allowed'})
         # Prepare everything we need
-        table = self._ACTION[params['action']][0]
-        column = self._ACTION[params['action']][1]
+        table = self._ACTION['_DELETE'][params['action']][0]
+        column = self._ACTION['_DELETE'][params['action']][1]
         # Delete data (skill, member) from project
         query = "DELETE FROM " + table + " WHERE " + column + " = %s AND project_id = %s"
         self.cur.execute(query, (params['data'], params['project_id'], ))
