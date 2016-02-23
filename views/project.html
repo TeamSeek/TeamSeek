@@ -263,6 +263,11 @@ h1 {
           <span style="font-size: 17px;" v-else>
               There's no comment for this project yet.
           </span>
+          <div v-if="isOwnProject" style="margin-top: 20px; border-bottom: 0 transparent;" class="comment-box">
+            <span>Comment: <br /></span>
+            <textarea placeholder="New comment here" v-model="cmtInput" style="width:100%" rows="7"></textarea>
+            <button type="button" v-on:click="postCmt()">Post</button>
+          </div>
         </div>
       </div>
       <!-- End of project's comments -->
@@ -409,7 +414,7 @@ var SuggestedUsers = new Vue({
       this.$http.get('/api/suggestions/', request_params).then(function (response) {
         // If failed
         if (!response.data || response.data.error) {
-          console.log("Suggested Users:" + response.data.error);
+          console.log("Suggested Users:", response.data.error);
           return;
         }
         // If successful
@@ -441,12 +446,33 @@ var ProjectComments = new Vue ( {
         // If comments are successfully fetched
         this.comments = response.data;
         this.noneFound = false;
+        this.project_id = project_id;
+      });
+    },
+    postCmt: function() {
+      // Posting a comment
+      // This function will call the getComments method after
+      // it's finished posting comment
+      request_params = {'action': 'add_cmt', 'data': this.cmtInput, 'project_id': this.project_id};
+      this.$http.put('/api/projects/', request_params).then(function (response) {
+        // If failed to post comments
+        if (response.data.error) {
+          err = response.data.error;
+          console.log("ProjectComments:", err);
+          return;
+        }
+        // If comment is successfully posted
+        this.cmtInput = '';
+        this.getComments(this.project_id);
       });
     }
   },
   data: {
+    project_id: 0,
     noneFound: true,
-    comments: []
+    isOwnProject: _onload_data.isOwnProject,
+    comments: [],
+    cmtInput: ''
   }
 });
 </script>
