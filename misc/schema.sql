@@ -18,6 +18,13 @@ CREATE TABLE user_skills (
     level VARCHAR DEFAULT 'Beginner'
 );
 
+CREATE TABLE user_locs (
+    user_id INT NOT NULL UNIQUE,
+    cur_city VARCHAR,
+    cur_state VARCHAR,
+    cur_country VARCHAR
+);
+
 CREATE TABLE project_info (
 	project_id SERIAL PRIMARY KEY,
 	owner VARCHAR NOT NULL,
