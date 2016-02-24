@@ -79,7 +79,7 @@ class UserHandler(object):
                         array(SELECT skill FROM user_skills WHERE user_skills.user_id = users.user_id),
                         array(SELECT level FROM user_skills WHERE user_skills.user_id = users.user_id)
                 FROM users
-                WHERE username = %s
+                WHERE username = %s;
                 """
         self.cur.execute(query, (params['username'], ))
         # Fetching the data from database
@@ -135,8 +135,10 @@ class UserHandler(object):
         query_params = (params['data'], cherrypy.session['user'], )
         # If editing skill's level
         if 'edit_skill_level' == params['action']:
-            query += "AND skill = %s"
+            query += "AND skill = %s;"
             query_params += (params['skill'], )
+        else:
+            query += ";"
         # Execute the query
         self.cur.execute(query, query_params)
         # Apply changes to database
@@ -281,7 +283,7 @@ def add_user_skill(cur=None, user=None, skill=None):
     query = """
             SELECT * FROM user_skills
             WHERE user_id = (SELECT user_id FROM users WHERE username = %s)
-            AND skill = %s
+            AND skill = %s;
             """
     cur.execute(query, (user, skill, ))
     if cur.fetchall():

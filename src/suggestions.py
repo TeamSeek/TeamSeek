@@ -68,7 +68,7 @@ class QualifiedUsers(object):
                                   WHERE skill=ANY (SELECT skill
                                                    FROM project_skills
                                                    WHERE project_id = %s)
-                                  )
+                                  );
                 """
         self.cur.execute(query, (params['project_id'], ))
         # Fetching the data from database

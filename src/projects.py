@@ -270,7 +270,7 @@ class ProjectHandler(object):
         table = self._ACTION['_DELETE'][params['action']][0]
         column = self._ACTION['_DELETE'][params['action']][1]
         # Delete data (skill, member) from project
-        query = "DELETE FROM " + table + " WHERE " + column + " = %s AND project_id = %s"
+        query = "DELETE FROM " + table + " WHERE " + column + " = %s AND project_id = %s;"
         self.cur.execute(query, (params['data'], params['project_id'], ))
         # Apply changes to database
         self.db.connection.commit()

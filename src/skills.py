@@ -79,7 +79,7 @@ class SkillHandler(object):
             return json.dumps({"error": "Not enough data"})
 
         # Query for database
-        query = "UPDATE skills SET approved = %s WHERE name = %s"
+        query = "UPDATE skills SET approved = %s WHERE name = %s;"
         self.cur.execute(query, (params['approved'], params['skill'], ))
         # Apply changes to database
         self.db.connection.commit()
