@@ -12,18 +12,26 @@ class UserHandler(object):
     # Format: {'action': [table, column(s)]}
     _ACTION = {
         # [GET] Getting user's details
-        'user_details': [],     # To get user's full details
+        '_GET': {
+            'user_details': []     # To get user's full details
+        },
         # [POST] Editing user's details
-        'edit_email': ['users', 'email'],
-        'edit_full_name': ['user_extras', 'full_name'],
-        'edit_bio': ['user_extras', 'bio'],
-        'edit_avatar': ['user_extras', 'avatar'],
-        'edit_skill_level': ['user_skills', 'level'],
+        '_POST': {
+            'edit_email': ['users', 'email'],
+            'edit_full_name': ['user_extras', 'full_name'],
+            'edit_bio': ['user_extras', 'bio'],
+            'edit_avatar': ['user_extras', 'avatar'],
+            'edit_skill_level': ['user_skills', 'level']
+        },
         # [PUT] Adding username and email into database (first use)
-        'add_user': [],         # Add user into database (new users
-        'add_skill': [],        # Add new skill into user's details
+        '_PUT': {
+            'add_user': [],         # Add user into database (new users
+            'add_skill': []        # Add new skill into user's details
+        },
         # [DELETE] Removing user's details
-        'delete_skill': ['user_skills', 'skill']      # delete user's old skill from database
+        '_DELETE': {
+            'delete_skill': ['user_skills', 'skill']      # delete user's old skill from database
+        }
     }
 
     def __init__(self, db=None):
@@ -57,6 +65,10 @@ class UserHandler(object):
         if 'action' not in params or \
            'username' not in params:
                 return json.dumps({"error": "Not enough data"})
+
+        # Check if action is allowed
+        if params['action'] not in self._ACTION['_GET']:
+            return json.dumps({'error': 'Action is not allowed'})
 
         # Fetch the user that has 'username'
         query = """
@@ -99,16 +111,20 @@ class UserHandler(object):
            'data' not in params:
             return json.dumps({"error": "Not enough data"})
 
+        # Check if action is allowed
+        if params['action'] not in self._ACTION['_POST']:
+            return json.dumps({'error': 'Action is not allowed'})
+
         # Check if action is in _ACTION list
         # Need to take a look at this
         # It might cause some unexpected errors if
         # the action is for [GET], [PUT] or [DELETE]
-        if params['action'] not in self._ACTION:
+        if params['action'] not in self._ACTION['_POST']:
             return json.dumps({"error": "Action is unavailable"})
 
         # Getting everything we need
-        table = self._ACTION[params['action']][0]
-        column = self._ACTION[params['action']][1]
+        table = self._ACTION['_POST'][params['action']][0]
+        column = self._ACTION['_POST'][params['action']][1]
 
         # Apply edit
         query = "UPDATE %s " % table
@@ -144,6 +160,10 @@ class UserHandler(object):
            ('skill' not in params):
                 return json.dumps({"error": "Not enough data"})
 
+        # Check if action is allowed
+        if params['action'] not in self._ACTION['_PUT']:
+            return json.dumps({'error': 'Action is not allowed'})
+
         # If it's adding user
         if params['action'] == 'add_user':
             # msg will be json formatted
@@ -174,12 +194,12 @@ class UserHandler(object):
             return json.dumps({"error": "Not enough data"})
 
         # Check if the action is in _ACTION
-        if params['action'] not in self._ACTION:
-            return json.dumps({"error": "Action is unavailable"})
+        if params['action'] not in self._ACTION['_DELETE']:
+            return json.dumps({"error": "Action is not allowed"})
 
         # Prepare everything we need
-        table = self._ACTION[params['action']][0]
-        column = self._ACTION[params['action']][1]
+        table = self._ACTION['_DELETE'][params['action']][0]
+        column = self._ACTION['_DELETE'][params['action']][1]
 
         # Form query to find and delete the skill based on the logged in user
         # DO NOT pass any user's input into query
