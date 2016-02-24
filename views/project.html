@@ -263,7 +263,7 @@ h1 {
           <span style="font-size: 17px;" v-else>
               There's no comment for this project yet.
           </span>
-          <div v-if="isOwnProject" style="margin-top: 20px; border-bottom: 0 transparent;" class="comment-box">
+          <div style="margin-top: 20px; border-bottom: 0 transparent;" class="comment-box">
             <span>Comment: <br /></span>
             <textarea placeholder="New comment here" v-model="cmtInput" style="width:100%" rows="7"></textarea>
             <button type="button" v-on:click="postCmt()">Post</button>
@@ -348,15 +348,17 @@ var projectbox = new Vue({
         this.noneFound = true;
       } else {
         this.project_details = response.data;
+        this.project_details.long_desc = response.data.long_desc || "No description yet!";
         /* If the project doesn't have any avatar, use default one */
         if (!this.project_details.avatar)
           this.project_details.avatar = 'http://www.gravatar.com/avatar/2ddcb18c2d8d42f043ed8765b039876e?d=identicon';
+        // If project's description isn't defined
         /* Now make sure we have the members' details */
         members.getMembersDetails(this.project_details.owner, this.project_details.project_members);
       }
       application.checkApplied();
-      SuggestedUsers.getUsers(this.project_details.project_id);
-      ProjectComments.getComments(this.project_details.project_id);
+      SuggestedUsers.getUsers();
+      ProjectComments.getComments();
     }, function() {
       console.log('failure');
     });
@@ -409,8 +411,8 @@ var application = new Vue({
 var SuggestedUsers = new Vue({
   el: '#suggested-users',
   methods: {
-    getUsers: function(project_id) {
-      request_params = {'action': 'qualified_users', 'project_id': project_id};
+    getUsers: function() {
+      request_params = {'action': 'qualified_users', 'project_id': projectbox.project_details.project_id};
       this.$http.get('/api/suggestions/', request_params).then(function (response) {
         // If failed
         if (!response.data || response.data.error) {
@@ -432,10 +434,10 @@ var SuggestedUsers = new Vue({
 var ProjectComments = new Vue ( {
   el: '#project-comments',
   methods: {
-    getComments: function(project_id) {
+    getComments: function() {
       // Getting project's comments
       // This function is called by projectbox's Vue
-      request_params = {'action': 'project_cmts', 'project_id': project_id};
+      request_params = {'action': 'project_cmts', 'project_id': projectbox.project_details.project_id};
       this.$http.get('/api/projects/', request_params).then(function (response) {
         // If failed to fetch comments
         if (!response.data[0] || response.data.error) {
@@ -453,7 +455,7 @@ var ProjectComments = new Vue ( {
       // Posting a comment
       // This function will call the getComments method after
       // it's finished posting comment
-      request_params = {'action': 'add_cmt', 'data': this.cmtInput, 'project_id': this.project_id};
+      request_params = {'action': 'add_cmt', 'data': this.cmtInput, 'project_id': projectbox.project_details.project_id};
       this.$http.put('/api/projects/', request_params).then(function (response) {
         // If failed to post comments
         if (response.data.error) {
@@ -468,7 +470,6 @@ var ProjectComments = new Vue ( {
     }
   },
   data: {
-    project_id: 0,
     noneFound: true,
     isOwnProject: _onload_data.isOwnProject,
     comments: [],
