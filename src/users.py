@@ -21,7 +21,10 @@ class UserHandler(object):
             'edit_full_name': ['user_extras', 'full_name'],
             'edit_bio': ['user_extras', 'bio'],
             'edit_avatar': ['user_extras', 'avatar'],
-            'edit_skill_level': ['user_skills', 'level']
+            'edit_skill_level': ['user_skills', 'level'],
+            'edit_cur_city': ['user_locs', 'cur_city'],
+            'edit_cur_state': ['user_locs', 'cur_state'],
+            'edit_cur_country': ['user_locs', 'cur_country']
         },
         # [PUT] Adding username and email into database (first use)
         '_PUT': {
@@ -104,6 +107,9 @@ class UserHandler(object):
                         i.e. {'action': 'edit_bio', 'data': 'something'}
                         i.e. {'action': 'edit_avatar', 'data': 'something'}
                         i.e. {'action': 'edit_skill_level', 'data': 'Expert', 'skill': 'skill_name'}
+                        i.e. {'action': 'edit_cur_city', 'data': 'city'}
+                        i.e. {'action': 'edit_cur_state', 'data': 'state'}
+                        i.e. {'action': 'edit_cur_country', 'data': 'country'}
         :return: {} if successful or {"error": "some error"} if failed
         """
         # Check if everything is provided
@@ -116,9 +122,6 @@ class UserHandler(object):
             return json.dumps({'error': 'Action is not allowed'})
 
         # Check if action is in _ACTION list
-        # Need to take a look at this
-        # It might cause some unexpected errors if
-        # the action is for [GET], [PUT] or [DELETE]
         if params['action'] not in self._ACTION['_POST']:
             return json.dumps({"error": "Action is unavailable"})
 
@@ -127,10 +130,7 @@ class UserHandler(object):
         column = self._ACTION['_POST'][params['action']][1]
 
         # Apply edit
-        query = "UPDATE %s " % table
-        # Never put user's input in query. Only whatever we have pre-set
-        query += "SET %s = %s " % (column, '%s')
-        query += "WHERE user_id = (SELECT user_id FROM users WHERE username = %s) "
+        query = "UPDATE {0} SET {1} = %s WHERE user_id = (SELECT user_id FROM users WHERE username = %s) "
         # Forming parameters for query to pass into self.cur.execute()
         query_params = (params['data'], cherrypy.session['user'], )
         # If editing skill's level
@@ -140,7 +140,7 @@ class UserHandler(object):
         else:
             query += ";"
         # Execute the query
-        self.cur.execute(query, query_params)
+        self.cur.execute(query.format(table, column), query_params)
         # Apply changes to database
         self.db.connection.commit()
 
@@ -206,13 +206,16 @@ class UserHandler(object):
         # Form query to find and delete the skill based on the logged in user
         # DO NOT pass any user's input into query
         # SQL injection!
-        query = "DELETE FROM %s " % table
-        query += "WHERE user_id = (SELECT user_id FROM users WHERE username = %s) "
-        query += "AND %s = %s;" % (column, '%s')
-        query += "UPDATE skills SET count = count - 1 WHERE name = %s;"
+        query = """
+                DELETE FROM {0}  
+                WHERE user_id = (SELECT user_id FROM users WHERE username = %s)
+                AND {1} = %s;
+
+                UPDATE skills SET count = count - 1 WHERE name = %s;
+                """
 
         # Send query to database
-        self.cur.execute(query, (cherrypy.session['user'], params['skill'], params['skill']))
+        self.cur.execute(query.format(table, column), (cherrypy.session['user'], params['skill'], params['skill']))
 
         # Apply changes to database
         self.db.connection.commit()
@@ -258,22 +261,31 @@ def format_user_details(full=False, fetch=None):
 
 """ Add user """
 def add_new_user(cur=None, username=None, email=None):
-    # Check if user's in database
-    query = "SELECT * FROM users WHERE username = %s"
-    cur.execute(query, (username, ))
-    # If there are data returned
-    if cur.fetchall():
-        return json.dumps({"error": "User is already in database"})
-
     # Put username and email into our database
-    # Also create a new column for user_extras
+    # if the username isn't existed yet
+    # also create a row for in user_extras and user_locs
     query = """
-            INSERT INTO users (username, email, join_date)
-            VALUES (%s, %s, %s);
-            INSERT INTO user_extras (user_id)
-            VALUES ((SELECT user_id FROM users WHERE username = %s));
+            DO $$
+            DECLARE
+                id INT;
+                usr VARCHAR;
+            BEGIN
+                usr = %s;
+                PERFORM user_id FROM users WHERE username = usr;
+                IF NOT FOUND THEN
+                    INSERT INTO users (username, email, join_date)
+                    VALUES (usr, %s, %s) RETURNING user_id INTO id;
+
+                    INSERT INTO user_extras (user_id)
+                    VALUES (id);
+
+                    INSERT INTO user_locs (user_id)
+                    VALUES (id);
+                END IF;
+            END
+            $$
             """
-    cur.execute(query, (username, email, date.today(), username, ))
+    cur.execute(query, (username, email, date.today(), ))
     # Successfully added new user
     return json.dumps({})
 

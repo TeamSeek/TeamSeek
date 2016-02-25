@@ -13,13 +13,13 @@ CREATE TABLE user_extras (
 );
 
 CREATE TABLE user_skills (
-    user_id INT NOT NULL,
+    user_id INT NOT NULL PRIMARY KEY,
     skill VARCHAR NOT NULL,
     level VARCHAR DEFAULT 'Beginner'
 );
 
 CREATE TABLE user_locs (
-    user_id INT NOT NULL UNIQUE,
+    user_id INT NOT NULL UNIQUE PRIMARY KEY,
     cur_city VARCHAR,
     cur_state VARCHAR,
     cur_country VARCHAR
