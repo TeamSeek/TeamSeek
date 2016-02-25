@@ -63,7 +63,7 @@ h1 {
   margin: 30px 0px 0px 0px;
   width: 150px;
 }
-.skillbox{
+.skillbox {
   margin-top: 15px;
   line-height: 315%;
   white-space: nowrap;
@@ -125,6 +125,19 @@ h1 {
 .comment {
   margin-left: 50px;
   margin-top: 5px;
+}
+
+.clock-icon {
+  background-image: url('https://cdn4.iconfinder.com/data/icons/devine_icons/Black/PNG/System%20and%20Internet/Times%20and%20Dates.png');
+  height: 20px;
+  width: 20px;
+}
+.delete {
+  cursor: pointer;
+  font-size: 15px;
+}
+.delete:hover {
+  color: red;
 }
 </style>
 <div id="skillOverlay">
@@ -256,8 +269,26 @@ h1 {
                 <img style="margin-top: 5px;" width=30px height=30px v-bind:src="cmt.avatar" class="avatar"/>
                 <span style="font-size: 20px; height: 30px;">{{cmt.full_name}}</span>
               </a>
-              <div style="float: right; margin-right: 10px; color: #A8A8A8">Posted on: {{cmt.cmt_time}}</div>
+              <div style="text-align: right; float: right; margin-right: 10px; color: #A8A8A8; font-size: 13px;">
+                {{cmt.cmt_time}}<br />
+                <span class="delete" v-on:click="deleteCmt(cmt.id)">[x]</span>
+              </div>
               <div class="comment">{{cmt.comment}}</div>
+              <!-- Comment's replies -->
+              <div style="margin-left: 50px;" class="comment-box" v-for="c_cmt in cmt.c_comments">
+                <a href="/{{cmt.username}}/">
+                  <img style="margin-top: 5px;" width=30px height=30px v-bind:src="c_cmt.avatar" class="avatar"/>
+                  <span style="font-size: 20px; height: 30px;">{{c_cmt.full_name}}</span>
+                </a>
+                <div style="text-align: right; float: right; margin-right: 10px; color: #A8A8A8; font-size: 13px;">
+                  <div class="clock-icon"></div>{{c_cmt.cmt_time}}<br />
+                  <span class="delete" v-on:click="deleteCmt(c_cmt.id)">[x]</span>
+                </div>
+                <div class="comment">{{c_cmt.comment}}</div>
+              </div>
+              <!-- End comment's replies -->
+              <textarea placeholder="Reply here" v-model="replyInput[cmt.id]" style="width:80%; margin-left: 50px; resize: vertical;" rows="1"></textarea>
+              <button style="margin-left: 50px;" type="button" v-on:click="postCmt(cmt.id, replyInput[cmt.id])">Reply</button>
             </div>
           </div>
           <span style="font-size: 17px;" v-else>
@@ -265,8 +296,8 @@ h1 {
           </span>
           <div style="margin-top: 20px; border-bottom: 0 transparent;" class="comment-box">
             <span>Comment: <br /></span>
-            <textarea placeholder="New comment here" v-model="cmtInput" style="width:100%" rows="7"></textarea>
-            <button type="button" v-on:click="postCmt()">Post</button>
+            <textarea placeholder="New comment here" v-model="cmtInput" style="width:100%; resize:vertical;" rows="7"></textarea>
+            <button type="button" v-on:click="postCmt(0, cmtInput)">Post</button>
           </div>
         </div>
       </div>
@@ -437,7 +468,7 @@ var ProjectComments = new Vue ( {
     getComments: function() {
       // Getting project's comments
       // This function is called by projectbox's Vue
-      request_params = {'action': 'project_cmts', 'project_id': projectbox.project_details.project_id};
+      request_params = {"action": "project_cmts", "project_id": projectbox.project_details.project_id};
       this.$http.get('/api/projects/', request_params).then(function (response) {
         // If failed to fetch comments
         if (!response.data[0] || response.data.error) {
@@ -448,14 +479,19 @@ var ProjectComments = new Vue ( {
         // If comments are successfully fetched
         this.comments = response.data;
         this.noneFound = false;
-        this.project_id = project_id;
+        console.log(this.comments);
       });
     },
-    postCmt: function() {
+    postCmt: function(parent_id, data) {
       // Posting a comment
       // This function will call the getComments method after
       // it's finished posting comment
-      request_params = {'action': 'add_cmt', 'data': this.cmtInput, 'project_id': projectbox.project_details.project_id};
+      request_params = {
+        "action": "add_cmt", 
+        "data": data, 
+        "project_id": projectbox.project_details.project_id,
+        "parent_id": parent_id
+      };
       this.$http.put('/api/projects/', request_params).then(function (response) {
         // If failed to post comments
         if (response.data.error) {
@@ -467,13 +503,31 @@ var ProjectComments = new Vue ( {
         this.cmtInput = '';
         this.getComments(this.project_id);
       });
+    },
+    deleteCmt: function(id) {
+      // Deleting a comment
+      request_params = {
+        "action": "delete_cmt",
+        "id": id
+      };
+      this.$http.delete('/api/projects/', request_params).then(function (response) {
+        // If failed to delete
+        if (response.data.error) {
+          err = response.data.error;
+          console.log("ProjectComments:", err);
+          return;
+        }
+        // If comment is successfully deleted
+        this.getComments();
+      });
     }
   },
   data: {
     noneFound: true,
     isOwnProject: _onload_data.isOwnProject,
     comments: [],
-    cmtInput: ''
+    cmtInput: '',
+    replyInput: []
   }
 });
 </script>
