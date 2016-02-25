@@ -42,7 +42,8 @@ class ProjectHandler(object):
         # [DELETE] Deleting project or project's details
         '_DELETE': {
             'delete_skill': ['project_skills', 'skill'],
-            'delete_member': ['project_members', 'member']
+            'delete_member': ['project_members', 'member'],
+            'delete_cmt': ''
         }
     }
 
@@ -56,11 +57,12 @@ class ProjectHandler(object):
 
     """ Main page """
     @cherrypy.expose
-    def index(self, **params):
+    def default(self, *path, **params):
         """ Forward HTTP methods to the correct function """
         # Check if user's logged in
         if 'user' not in cherrypy.session:
             return json.dumps({"error": "You shouldn't be here"})
+
         # Forward HTTP methods
         http_method = getattr(self, cherrypy.request.method)
         return http_method(**params)
@@ -100,13 +102,24 @@ class ProjectHandler(object):
         # If grabbing project's comments
         if params['action'] == 'project_cmts':
             query = """
-                    SELECT  id, poster_id as user_id,
+                    SELECT  p.id, poster_id as user_id,
                             (SELECT username FROM users WHERE user_id = poster_id),
                             avatar, full_name,
-                            cmt as comment, to_char(cmt_time, 'MM-DD-YY HH:MI:SS') as cmt_time 
-                    FROM project_cmts
+                            cmt as comment, 
+                            to_char(cmt_time, 'MM-DD-YY HH:MI:SS') as cmt_time, 
+                            array((SELECT row_to_json(d) FROM (SELECT c.id, c.poster_id as user_id,
+                                                                (SELECT username FROM users WHERE user_id = poster_id),
+                                                                avatar, full_name,
+                                                                c.cmt as comment, 
+                                                                to_char(c.cmt_time, 'MM-DD-YY HH:MI:SS') as cmt_time
+                                                                FROM project_cmts c
+                                                                LEFT JOIN user_extras ON (user_id = poster_id)
+                                                                WHERE parent_id = p.id
+                                                                ORDER BY cmt_time DESC
+                                                       ) d )) as c_comments
+                    FROM project_cmts p
                     LEFT JOIN user_extras ON (user_id = poster_id)
-                    WHERE project_id = %s
+                    WHERE project_id = %s AND parent_id = 0
                     ORDER BY cmt_time DESC;
                     """
             dCur.execute(query, (params['project_id'], ))
@@ -205,7 +218,7 @@ class ProjectHandler(object):
             i.e. {'action': 'new_project', 'title': 'new title'}
             i.e. {'action': 'add_member', 'data': 'new member', 'project_id': '1'}
             i.e. {'action': 'add_skill', 'data': 'new skill', 'project_id': '1'}
-            i.e. {'action': 'add_cmt', 'data': 'Comment', 'project_id': '1'}
+            i.e. {'action': 'add_cmt', 'data': 'Comment', 'project_id': '1', 'parent_id': '0'}
 
         :return : {} if successful, {"error": "some error"}
         """
@@ -222,7 +235,7 @@ class ProjectHandler(object):
         # If action is add comments
         if params['action'] == 'add_cmt':
             dCur = self.db.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-            msg = add_comment(dCur, params['data'], params['project_id'])
+            msg = add_comment(dCur, params['data'], params['project_id'], params['parent_id'], )
             # Apply changes to database
             self.db.connection.commit()
             return json.dumps(msg)
@@ -255,17 +268,25 @@ class ProjectHandler(object):
         :param params: Check _ACTION above to find out options available
             i.e. {'action': 'delete_skill', 'data': 'javascript', 'project_id' = '1'}
             i.e. {'action': 'delete_member', 'data': 'gnihton', 'project_id' = '1'}
+            i.e. {'action': 'delete_cmt', 'id': '1'}
         :return: {} for successful. {'error': 'some error'} for failed
         """
         # Check if everything is provided
         if 'action' not in params or \
-           'data' not in params or \
-           'project_id' not in params:
+           ('id' not in params and ('data' not in params or 'project_id' not in params)):
             return json.dumps({"error": "Not enough data"})
 
         # Check if action is allowed
         if params['action'] not in self._ACTION['_DELETE']:
             return json.dumps({'error': 'Action is not allowed'})
+
+        # If requesting to delete comment
+        if params['action'] == 'delete_cmt':
+            query = "DELETE FROM project_cmts WHERE id = %s;"
+            self.cur.execute(query, (params['id'], ))
+            self.db.connection.commit()
+            return json.dumps({})
+
         # Prepare everything we need
         table = self._ACTION['_DELETE'][params['action']][0]
         column = self._ACTION['_DELETE'][params['action']][1]
@@ -330,7 +351,7 @@ def add_new_project(cur=None, owner=None, title=None):
     return
 
 # Adding comments
-def add_comment(dCur=None, cmt=None, project_id=None):
+def add_comment(dCur=None, cmt=None, project_id=None, parent_id=None):
     """ Adding comment into a particular project """
     # If comment is blank, do not add!
     if not cmt:
@@ -338,9 +359,9 @@ def add_comment(dCur=None, cmt=None, project_id=None):
 
     # Start adding comment into database
     query = """
-            INSERT INTO project_cmts (project_id, poster_id, cmt, cmt_time)
-            VALUES (%s, (SELECT user_id FROM users WHERE username = %s), %s, %s) RETURNING id;
+            INSERT INTO project_cmts (parent_id, project_id, poster_id, cmt, cmt_time)
+            VALUES (%s, %s, (SELECT user_id FROM users WHERE username = %s), %s, %s) RETURNING id;
             """
-    dCur.execute(query, (project_id, cherrypy.session['user'], cmt, datetime.now(), ))
+    dCur.execute(query, (parent_id, project_id, cherrypy.session['user'], cmt, datetime.now(), ))
     msg = dCur.fetchone()
     return msg

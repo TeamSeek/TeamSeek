@@ -54,6 +54,7 @@ CREATE TABLE project_extras (
 
 CREATE TABLE project_cmts (
     id SERIAL PRIMARY KEY,
+    parent_id INT NOT NULL DEFAULT 0,
     project_id INT NOT NULL,
     poster_id INT NOT NULL,
     cmt TEXT,
