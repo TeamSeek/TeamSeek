@@ -98,6 +98,10 @@ h1 {
   width: 100%;
 }
 
+.clickable {
+  cursor: pointer;
+}
+
 .skill-autocomplete {
   margin-top: 0px;
   padding: 0px;
@@ -218,8 +222,9 @@ h1 {
             </h1>
             <span>Created on: {{project_details.posted_date}} </span><br /> 
             <span style="position: absolute;">Progress: </span>
-            <div title="25%" class="meter">
-              <span style="width: 25%"></span>
+            <div class="meter" v-bind:class="{'clickable':isOwnProject}"
+              v-on:click="changeProgress($event)">
+              <span v-bind:style="progressStyle"></span>
             </div>
             <div class="markdown">
               <div v-html="project_details.long_desc | marked"></div>
@@ -380,6 +385,8 @@ var projectbox = new Vue({
         this.noneFound = true;
       } else {
         this.project_details = response.data;
+        if (!response.data.progress) response.data.progress = 0;
+        this.progressStyle.width = response.data.progress + '%';
         this.project_details.long_desc = response.data.long_desc || "No description yet!";
         /* If the project doesn't have any avatar, use default one */
         if (!this.project_details.avatar)
@@ -399,6 +406,22 @@ var projectbox = new Vue({
     marked: marked
   },
   methods: {
+    changeProgress: function(event) {
+      // Do nothing if user is not the owner
+      if (!_onload_data.isOwnProject) return;
+      // Divide click location by width of target
+      var t = parseInt((event.offsetX / event.target.clientWidth) * 100, 10);
+      if (t > 100) t = 100;
+      var update_progress = {'action': 'edit_progress',
+                             'data': parseInt(t),
+                             'project_id': this.project_details.project_id};
+      this.progressStyle.width = t + '%';
+      this.$http.post('/api/projects/', update_progress).then(function(response) {
+        console.log(response);
+      }, function(error) {
+        alert(error);
+      });
+    },
     addSkill: function(skill) {
       var that = this;
       /* Render temporary skill tag when new skill is added serverside */
@@ -409,6 +432,7 @@ var projectbox = new Vue({
   },
   data: {
     noneFound: false,
+    progressStyle: {width: '0%'},
     isOwnProject: _onload_data.isOwnProject,
     project_details: {'long_desc': ''},
   }
@@ -480,7 +504,6 @@ var ProjectComments = new Vue ( {
         // If comments are successfully fetched
         this.comments = response.data;
         this.noneFound = false;
-        console.log(this.comments);
       });
     },
     postCmt: function(parent_id, data) {

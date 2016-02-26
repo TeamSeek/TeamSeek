@@ -26,6 +26,7 @@ class ProjectHandler(object):
         # [POST] Editing project's details
         # params: action, project_id, data
         '_POST': {
+            'edit_progress': ['project_info', 'progress'],
             'edit_title': ['project_info', 'title'],
             'edit_short_desc': ['project_info', 'short_desc'],
             'edit_long_desc': ['project_info', 'long_desc'],
