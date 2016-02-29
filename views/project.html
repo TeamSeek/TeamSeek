@@ -410,7 +410,7 @@ var projectbox = new Vue({
       // Do nothing if user is not the owner
       if (!_onload_data.isOwnProject) return;
       // Divide click location by width of target
-      var t = parseInt((event.offsetX / event.target.clientWidth) * 100, 10);
+      var t = parseInt((event.layerX / event.target.clientWidth) * 100, 10);
       if (t > 100) t = 100;
       var update_progress = {'action': 'edit_progress',
                              'data': parseInt(t),
