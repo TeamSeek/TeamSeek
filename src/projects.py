@@ -243,10 +243,10 @@ class ProjectHandler(object):
 
         # If creating new project
         if 'new_project' == params['action']:
-            add_new_project(self.cur, cherrypy.session['user'], params['title'])
+            project_id = add_new_project(self.cur, cherrypy.session['user'], params['title'])
             # Apply changes
             self.db.connection.commit()
-            return json.dumps({})
+            return json.dumps({'project_id':project_id[0]})
 
         # Add member and skill to database
         # Prepare everything we need
@@ -348,8 +348,13 @@ def add_new_project(cur=None, owner=None, title=None):
             END
             $$
             """
+    fetch_id = """
+            SELECT project_id FROM project_info WHERE title = %s and owner = %s;
+            """
     cur.execute(query, (title, owner, title, owner, date.today(), title, owner, ))
-    return
+    cur.execute(fetch_id, (title, owner))
+    project_id = cur.fetchone()
+    return project_id
 
 # Adding comments
 def add_comment(dCur=None, cmt=None, project_id=None, parent_id=None):

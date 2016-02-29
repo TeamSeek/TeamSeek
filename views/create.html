@@ -158,7 +158,7 @@ new Vue({
         });
       } else {
         /* Project does not yet exist and needs to be created */
-        this.$http.post('/api/projects/', new_project, emulateJSON).then(function(response) {
+        this.$http.put('/api/projects/', new_project, emulateJSON).then(function(response) {
           this.saveFields(response.data.project_id, function() {
             document.location = projectPage;
           });
