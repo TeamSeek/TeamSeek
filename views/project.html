@@ -163,7 +163,7 @@ h1 {
           this.suggestions = [];
           return;
         }
-        this.$http.get('/api/skills/', {q: data}).then(function(response) {
+        this.$http.get('/api/skills/', {q: data.toLowerCase()}).then(function(response) {
           this.suggestions = response.data;
         }, function (error) {
           alert(error);
