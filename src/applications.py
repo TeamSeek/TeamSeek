@@ -225,6 +225,12 @@ class ApplicationHandler(object):
         # Grab returned values from database
         fetch = dCur.fetchone()
         
+        # If application has already existed
+        # which means that fetch doesn't have any value
+        # return an error
+        if not fetch:
+            return json.dumps({"error": "This user has already applied for this project!"})
+
         # Trigger notification
         request_params = {
             'action': 'new_notification', 
