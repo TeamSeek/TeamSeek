@@ -4,6 +4,7 @@
 import cherrypy
 import json
 import requests
+import psycopg2.extras
 from datetime import date
 
 
@@ -189,27 +190,47 @@ class ApplicationHandler(object):
         # If accepted is not provided meaning that 
         # the application is still pending
         query = """
-                INSERT INTO applications (project_id, applicant_id, date_applied)
-                VALUES (%s, (SELECT user_id FROM users WHERE username = %s), %s)
-                RETURNING id, (SELECT user_id 
-                               FROM users 
-                               WHERE username = (SELECT owner 
-                                                 FROM project_info 
-                                                 WHERE project_id = applications.project_id)); 
+                DROP FUNCTION my_function();
+                CREATE OR REPLACE FUNCTION my_function()
+                    RETURNS TABLE (sender_id INT, recipient_id INT) AS
+                $BODY$
+                DECLARE
+                    projectId INT;
+                    usrId INT;
+                    applicationID INT;
+                    ownerID INT;
+                BEGIN
+                    projectId = %s;
+                    usrId = (SELECT user_id FROM users WHERE username=%s);
+
+                    PERFORM id FROM applications WHERE project_id = projectId AND applicant_id = usrId;
+                    IF NOT FOUND THEN 
+                        RETURN QUERY
+                            INSERT INTO applications (project_id, applicant_id, date_applied)
+                            VALUES (projectId, usrId, %s)
+                            RETURNING id AS sender_id, (SELECT user_id AS recipient_id
+                                           FROM users 
+                                           WHERE username = (SELECT owner 
+                                                             FROM project_info 
+                                                             WHERE project_id = applications.project_id));
+                    END IF;
+                END;
+                $BODY$ LANGUAGE plpgsql;
+
+                SELECT * FROM my_function(); 
                 """
-        self.cur.execute(query, (params['project_id'], username, date.today(), ))
+        dCur = self.db.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+        dCur.execute(query, (params['project_id'], username, date.today(), ))
         
         # Grab returned values from database
-        fetch = self.cur.fetchall()
-        sender_id = fetch[0][0]
-        recipient_id = fetch[0][1]
-
+        fetch = dCur.fetchone()
+        
         # Trigger notification
         request_params = {
             'action': 'new_notification', 
             'type_id': self.notification_type, 
-            'recipient_id': recipient_id, 
-            'sender_id': sender_id
+            'recipient_id': fetch['recipient_id'], 
+            'sender_id': fetch['sender_id']
         }
         response = requests.put('{0}/api/notifications/'.format(self.domain), params=request_params)
         # Apply changes to database
