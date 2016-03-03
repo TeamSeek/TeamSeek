@@ -79,92 +79,94 @@
   cursor: pointer;
 }
 </style>
-<div class="centerbox">
-  <div class="flexcenter">
-    <!-- Left panel -->
-    <div class="bigitem">
-      <div class="displayitem" id="projectdisplay">
-        <h2>Projects<a href="/create" id="create-project">Publish New Idea</a></h2>
-        <div v-if="showSpinner" class="spinnerBox" id="spinnerBox"></div>
-        <div class="projectbox" v-for="project in projects" v-cloak>
-          <img align=left v-bind:src="project.imageUrl">
-          </img>
-          <h2><a href="/{{project.owner}}/{{project.title}}">{{project.owner}}/{{project.title}}</a></h2>
-          <p v-if="project.short_desc">{{project.short_desc}}</p>
-          <p v-else><i>No description found</i></p>
-        </div>
-        <p v-if="projects.length == 0 && ! showSpinner">No projects found<p>
-        <div style="height:0px;">
-          <span class="footer">
-            <a href="#">About</a>
-            <a href="#">Contact</a>
-            <a href="#">Terms of service</a>
-          </span>
+<div class="wrapper">
+  <div class="centerbox">
+    <div class="flexcenter">
+      <!-- Left panel -->
+      <div class="bigitem">
+        <div class="displayitem" id="projectdisplay">
+          <h2>Projects<a href="/create" id="create-project">Publish New Idea</a></h2>
+          <div v-if="showSpinner" class="spinnerBox" id="spinnerBox"></div>
+          <div class="projectbox" v-for="project in projects" v-cloak>
+            <img align=left v-bind:src="project.imageUrl">
+            </img>
+            <h3><a href="/{{project.owner}}/{{project.title}}">{{project.owner}}/{{project.title}}</a></h3>
+            <p v-if="project.short_desc">{{project.short_desc}}</p>
+            <p v-else><i>No description found</i></p>
+          </div>
+          <p v-if="projects.length == 0 && ! showSpinner">No projects found<p>
+          <div style="height:0px;">
+            <span class="footer">
+              <a href="#">About</a>
+              <a href="#">Contact</a>
+              <a href="#">Terms of service</a>
+            </span>
+          </div>
         </div>
       </div>
-    </div>
-    <!-- Right panel -->
-    <div class="smallitem">
-      <div v-cloak id="notifications">
-        <div v-if="!noInvitations || !noApplications" class="displayitem">
-          <p style="font-size: 20px;">You have: </p>
-          <!-- Invitation display -->
-          <div v-if="!noInvitations">
-            <a href="#" v-on:click="toggleInvitations()">
-              <p>
-                <span class="notification-count">{{invitations.length}}</span>
-                <span>Invitations</span>
-              </p>
-            </a>
-            <div v-if="invitationDisplay && invitations.length > 0" class="notification-display">
-              <div v-for="invitation in invitations">
-                <span>
-                  <a href="{{invitation.sender_username}}/">{{invitation.sender_username}}</a> 
-                  has invited you to join 
-                  <a href="{{invitation.sender_username}}/{{invitation.project_title}}">{{invitation.project_title}}</a>
-                </span>
-                <div style="margin-top: 12px;"> 
-                  <span v-on:click="acceptInv(invitation)" class="btn accept-btn">Accept</span>
-                  <span v-on:click="denyInv(invitation)" class="btn deny-btn">Deny</span>
+      <!-- Right panel -->
+      <div class="smallitem">
+        <div v-cloak id="notifications">
+          <div v-if="!noInvitations || !noApplications" class="displayitem">
+            <p style="font-size: 20px;">You have: </p>
+            <!-- Invitation display -->
+            <div v-if="!noInvitations">
+              <a href="#" v-on:click="toggleInvitations()">
+                <p>
+                  <span class="notification-count">{{invitations.length}}</span>
+                  <span>Invitations</span>
+                </p>
+              </a>
+              <div v-if="invitationDisplay && invitations.length > 0" class="notification-display">
+                <div class="notification-item" v-for="invitation in invitations">
+                  <span>
+                    <a href="{{invitation.sender_username}}/">{{invitation.sender_username}}</a> 
+                    has invited you to join 
+                    <a href="{{invitation.sender_username}}/{{invitation.project_title}}">{{invitation.project_title}}</a>
+                  </span>
+                  <div style="margin-top: 12px;"> 
+                    <span v-on:click="acceptInv(invitation)" class="btn accept-btn">Accept</span>
+                    <span v-on:click="denyInv(invitation)" class="btn deny-btn">Deny</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          <!-- End invitation display -->
-          <!-- Application display -->
-          <div v-if="!noApplications">
-            <a href="#" v-on:click="toggleApplications()">
-              <p>
-                <span class="notification-count">{{applications.length}}</span>
-                <span>Applications</span>
-              </p>
-            </a>
-            <div v-if="applicationDisplay && applications.length > 0" class="notification-display">
-              <div v-for="application in applications">
-                <span>
-                  <a href="{{application.applicant_username}}/">{{application.applicant_username}}</a>
-                  has applied to your project 
-                  <a href="{{init.user}}/{{application.title}}">{{application.title}}</a>
-                <span>
-                <div style="margin-top: 12px;">
-                  <span v-on:click="approveApp(application)" class="btn accept-btn">Approve</span>
-                  <span v-on:click="denyApp(application)" class="btn deny-btn">Deny</span>
+            <!-- End invitation display -->
+            <!-- Application display -->
+            <div v-if="!noApplications">
+              <a href="#" v-on:click="toggleApplications()">
+                <p>
+                  <span class="notification-count">{{applications.length}}</span>
+                  <span>Applications</span>
+                </p>
+              </a>
+              <div v-if="applicationDisplay && applications.length > 0" class="notification-display">
+                <div class="notification-item" v-for="application in applications">
+                  <span>
+                    <a href="{{application.applicant_username}}/">{{application.applicant_username}}</a>
+                    has applied to your project 
+                    <a href="{{init.user}}/{{application.title}}">{{application.title}}</a>
+                  <span>
+                  <div style="margin-top: 12px;">
+                    <span v-on:click="approveApp(application)" class="btn accept-btn">Approve</span>
+                    <span v-on:click="denyApp(application)" class="btn deny-btn">Deny</span>
+                  </div>
                 </div>
               </div>
             </div>
+            <!-- End application display -->
           </div>
-          <!-- End application display -->
         </div>
-      </div>
-      <div id="myideas" class="displayitem">
-        <h2><a href="/{{init.user}}">My Ideas</a></h2>
-        <div v-if="showSpinner" class="spinnerBox" id="ideaSpinnerBox"></div>
-        <div v-for="idea in myIdeas" class="projectbox">
-          <img align=left width=40px height=40px v-bind:src="idea.imageUrl">
-          </img>
-          <p><a href="{{init.user}}/{{idea.title}}">{{idea.title}}</a></p>
+        <div id="myideas" class="displayitem">
+          <h2><a href="/{{init.user}}">My Ideas</a></h2>
+          <div v-if="showSpinner" class="spinnerBox" id="ideaSpinnerBox"></div>
+          <div v-for="idea in myIdeas" class="projectbox">
+            <img align=left width=40px height=40px v-bind:src="idea.imageUrl">
+            </img>
+            <p><a href="{{init.user}}/{{idea.title}}">{{idea.title}}</a></p>
+          </div>
+          <p v-if="myIdeas.length == 0 && ! showSpinner">None found<p>
         </div>
-        <p v-if="myIdeas.length == 0 && ! showSpinner">None found<p>
       </div>
     </div>
   </div>

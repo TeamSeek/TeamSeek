@@ -52,7 +52,7 @@ textarea:disabled {
   cursor: pointer;
 }
 .newskill {
-  font-size: 27px;
+  font-size: 35px;
   color: #9C9C9C;
   cursor: pointer;
 }
@@ -83,12 +83,17 @@ textarea:disabled {
 .edit-input {
   background-color: white;
   color: black;
+  border: 1px solid #000;
+  width: 150px;
+  padding: 3px 8px 3px 8px;
+  border-radius: 2px;
 }
 .Beginner {
   background-color: yellow;
 }
 .Intermediate {
   background-color: green; 
+  color: white;
 }
 .Expert {
   background-color: #A10ACB;
@@ -188,71 +193,73 @@ textarea:disabled {
   </script>
 </div>
 
-<div class="centerbox">
-  <div class="flexcenter">
-    <!-- Left panel -->
-    <div class="bigitem">
-      <div id="projectdisplay">
-        <div class="displayitem">
-          <div style="margin: 20px 0 20px 0;">
-            <img class="avatar" v-on:click="editAvatar()" 
-                 v-bind:class="{'pointer': isOwnProfile, 'hover': isOwnProfile}" src="{{user_details.avatar}}" />
-						<span class="name-display" v-if="!editableName">{{user_details.full_name}}</span>
-            <input class="edit-input" v-model="user_details.full_name" v-else
-                   v-on:blur="saveName()" />
-            <span class="name-display">({{user}})</span>
-						<a class="edit-link" v-on:click="editName()" v-if="isOwnProfile && !editableName">Edit</a>
-            <br />
-            <b>Email: </b>
-            <input class="edit-input" v-model="user_details.email" v-if="editableEmail"
-                   v-on:blur="saveEmail()" value="{{user_details.email}}"/>
-            <span class="email-display" v-else>{{user_details.email}}</span>
-            <span class="edit-link" v-on:click="editEmail()" v-if="isOwnProfile && !editableEmail">Edit</span>
-            <br />
-            <b>Join date: </b>
-            <span class="joindate">{{user_details.join_date}}</span>
-          </div>
-          <div id="bioEl" v-cloak>
-						<textarea v-if="editableBio" :spellcheck="editableBio" class="bio-edit"
-                      v-model="user_details.bio" :disabled="!editableBio">{{user_details.bio}}</textarea>
-            <pre class="bio-display" v-else>{{user_details.bio}}</pre>
-		        <p class="edit-link" style="text-align: right;" v-on:click="editBio()" v-if="isOwnProfile && !editableBio">Edit</p>
-            <button v-if="editableBio" class="accept-button" v-on:click="saveBio()">Save</button>
-            <button v-if="editableBio" class="cancel-button" v-on:click="cancelBio()">Cancel</button>
-            <b>My Skills: </b>
-            <div class="skillbox">
-              <span v-for="skill in user_details.user_skills" v-on:click="changeLevel($index)"
-                    class="skill {{skill.level}}"
-                    v-bind:class="{'pointer': isOwnProfile, 'hover': isOwnProfile}">{{skill.name}}</span>
+<div class="wrapper">
+  <div class="centerbox">
+    <div class="flexcenter">
+      <!-- Left panel -->
+      <div class="bigitem">
+        <div id="projectdisplay">
+          <div class="displayitem">
+            <div style="margin: 20px 0 20px 0;">
+              <img class="avatar" v-on:click="editAvatar()" 
+                   v-bind:class="{'pointer': isOwnProfile, 'hover': isOwnProfile}" src="{{user_details.avatar}}" />
+              <span class="name-display" v-if="!editableName">{{user_details.full_name}}</span>
+              <input class="edit-input" v-model="user_details.full_name" v-else
+                     v-on:blur="saveName()" />
+              <span class="name-display">({{user}})</span>
+              <a class="edit-link" v-on:click="editName()" v-if="isOwnProfile && !editableName">Edit</a>
+              <br />
+              <b>Email: </b>
+              <input class="edit-input" v-model="user_details.email" v-if="editableEmail"
+                     v-on:blur="saveEmail()" value="{{user_details.email}}"/>
+              <span class="email-display" v-else>{{user_details.email}}</span>
+              <span class="edit-link" v-on:click="editEmail()" v-if="isOwnProfile && !editableEmail">Edit</span>
+              <br />
+              <b>Join date: </b>
+              <span class="joindate">{{user_details.join_date}}</span>
             </div>
-            <i class="icon-plus-sign newskill" v-on:click="addSkill()" v-if="isOwnProfile"></i>
+            <div id="bioEl" v-cloak>
+              <textarea v-if="editableBio" :spellcheck="editableBio" class="bio-edit"
+                        v-model="user_details.bio" :disabled="!editableBio">{{user_details.bio}}</textarea>
+              <pre class="bio-display" v-else>{{user_details.bio}}</pre>
+              <p class="edit-link" style="text-align: right;" v-on:click="editBio()" v-if="isOwnProfile && !editableBio">Edit</p>
+              <button v-if="editableBio" class="accept-button" v-on:click="saveBio()">Save</button>
+              <button v-if="editableBio" class="cancel-button" v-on:click="cancelBio()">Cancel</button>
+              <b>My Skills: </b>
+              <div class="skillbox">
+                <span v-for="skill in user_details.user_skills" v-on:click="changeLevel($index)"
+                      class="skill {{skill.level}}"
+                      v-bind:class="{'pointer': isOwnProfile, 'hover': isOwnProfile}">{{skill.name}}</span>
+              </div>
+              <b class="icon-plus-sign newskill" v-on:click="addSkill()" v-if="isOwnProfile">+</b>
+            </div>
           </div>
-        </div>
-        <div class="displayitem">
-          <h2>Projects from {{user}}</h2>
-          <div v-if="showSpinner" class="spinnerBox" id="spinnerBox"></div>
-          <div class="projectbox" v-for="project in projects" v-cloak>
-            <img align=left v-bind:src="project.imageUrl">
-            </img>
-            <h1><a href="/{{project.owner}}/{{project.title}}">{{project.title}}</a></h1>
-            <p>{{project.short_desc}}</p>
-          </div>
-          <p v-if="projects.length == 0 && ! showSpinner">No projects found<p>
-          <div style="height:0px;">
-            <span class="footer">
-              <a href="#">About</a>
-              <a href="#">Contact</a>
-              <a href="#">Terms of service</a>
-            </span>
+          <div class="displayitem">
+            <h2>Projects from {{user}}</h2>
+            <div v-if="showSpinner" class="spinnerBox" id="spinnerBox"></div>
+            <div class="projectbox" v-for="project in projects" v-cloak>
+              <img align=left v-bind:src="project.imageUrl">
+              </img>
+              <h3><a href="/{{project.owner}}/{{project.title}}">{{project.title}}</a></h3>
+              <p>{{project.short_desc}}</p>
+            </div>
+            <p v-if="projects.length == 0 && ! showSpinner">No projects found<p>
+            <div style="height:0px;">
+              <span class="footer">
+                <a href="#">About</a>
+                <a href="#">Contact</a>
+                <a href="#">Terms of service</a>
+              </span>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-    <!-- Right panel -->
-    <div class="smallitem">
-      <div class="displayitem">
-        <h2>Notifications</h2>
-        <p><i>No new notifications</i></p>
+      <!-- Right panel -->
+      <div class="smallitem">
+        <div class="displayitem">
+          <h2>Notifications</h2>
+          <p><i>No new notifications</i></p>
+        </div>
       </div>
     </div>
   </div>
