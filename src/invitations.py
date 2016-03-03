@@ -223,6 +223,11 @@ class InvitationHandler(object):
         recipient_id = params['user_id']
         project_id = params['project_id']
         invitation_id = self.cur.fetchall()[0][0] 
+
+        # If the invitation has already existed in database
+        # return an error
+        if not invitation_id:
+            return json.dumps({"error": "This user has been invited!"})
         
         # Apply changes to database
         self.db.connection.commit()
