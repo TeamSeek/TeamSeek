@@ -243,7 +243,7 @@ textarea:disabled {
               <p>{{project.short_desc}}</p>
             </div>
           </div>
-          <div class="displayitem">
+          <div class="displayitem" id="projects">
             <h2>Projects from {{user}}</h2>
             <div v-if="showSpinner" class="spinnerBox" id="spinnerBox"></div>
             <div class="projectbox" v-for="project in projects" v-cloak>
