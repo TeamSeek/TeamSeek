@@ -21,6 +21,7 @@ class ProjectHandler(object):
         '_GET': {
             'project_details': [], 
             'my_projects': [], 
+            'working_on': [],
             'project_cmts': ''
         },
         # [POST] Editing project's details
@@ -99,6 +100,28 @@ class ProjectHandler(object):
 
         # Create new dictionary cursor
         dCur = self.db.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        # If fetching projects "user" is currently a member of
+        if params['action'] == 'working_on':
+            query = """
+                SELECT	project_id, title, owner, short_desc,
+                        to_char(last_edit, 'MM-DD-YY') as last_edit,
+                        to_char(posted_date, 'MM-DD-YY') as posted_date,
+                        (SELECT update FROM project_extras WHERE project_id=project_info.project_id),
+                        (SELECT git_link FROM project_extras WHERE project_id=project_info.project_id),
+                        array(SELECT skill FROM project_skills WHERE project_id=project_info.project_id) AS project_skills,
+                        array(SELECT member FROM project_members WHERE project_id=project_info.project_id) AS project_members,
+                        long_desc, progress
+                FROM    project_info
+                WHERE project_id in (select project_id from project_members where member = %s)
+                ORDER BY posted_date DESC;
+                    """
+            cursor = self.db.connection.cursor()
+            dCur.execute(query, (params['user'],))
+            results = dCur.fetchall();
+            #results = [i[0] for i in results]
+            return json.dumps(results)
+
 
         # If grabbing project's comments
         if params['action'] == 'project_cmts':
