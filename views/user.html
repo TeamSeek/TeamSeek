@@ -234,6 +234,15 @@ textarea:disabled {
               <b class="icon-plus-sign newskill" v-on:click="addSkill()" v-if="isOwnProfile">+</b>
             </div>
           </div>
+          <div class="displayitem" v-if="currentProjects.length > 0">
+            <h2>Currently working on</h2>
+            <div class="projectbox" v-for="project in currentProjects" v-cloak>
+              <img align=left v-bind:src="project.imageUrl">
+              </img>
+              <h3><a href="/{{project.owner}}/{{project.title}}">{{project.title}}</a></h3>
+              <p>{{project.short_desc}}</p>
+            </div>
+          </div>
           <div class="displayitem">
             <h2>Projects from {{user}}</h2>
             <div v-if="showSpinner" class="spinnerBox" id="spinnerBox"></div>
@@ -284,6 +293,11 @@ var projectdisplay = new Vue({
       this.projects = response.data;
       addGravatars(this.projects);
       this.showSpinner = false;
+    });
+    var working_on = {action: 'working_on', user:_onload_data.user};
+    this.$http.get('/api/projects', working_on).then(function (response) {
+      this.currentProjects = response.data;
+      addGravatars(this.currentProjects);
     });
     var user_details = {action:'user_details', username:_onload_data.user};
     this.$http.get('/api/users', user_details).then(function (response) {
@@ -394,6 +408,7 @@ var projectdisplay = new Vue({
   },
   data: {
     projects: [],
+    currentProjects: [],
     myIdeas: [],
     editableName: false,
     editableEmail: false,
