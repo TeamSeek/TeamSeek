@@ -31,6 +31,8 @@ h2 a {
 input[type="text"] {
   font-size: 30px;
   display: block;
+  background-color: #FFFFFF;
+  border: 1px solid #CFCFCF;
 }
 button {
   background-color: #fff;
@@ -45,53 +47,55 @@ button {
   height: 100px;
 }
 </style>
-<div class="centerbox">
-  <div class="flexcenter">
-    <!-- Left panel -->
-    <div class="bigitem">
-      <div class="displayitem">
-        <div class="projectbox" id="projectbox">
-          <div id="editor">
-            <div class="editarea" v-if="projectName">
-              <h2>
-                <span v-on:click="clearName()">{{projectName}}</span>
-                <a href="https://help.github.com/articles/github-flavored-markdown/"
-                  target="_blank">(Format instructions here)</a>
-              </h2>
-              <textarea v-model="input" debounce="300"></textarea>
-              <h2>Preview</h2>
-              <div class="markdown-display" v-html="input | marked"></div>
-              <button class="accept-button" v-on:click="saveIdea()">Save</button>
-            </div>
-            <div id="titleinput" v-else>
-              <div v-if="project_id && showSpinner">
-                <h2>Loading project details...</h2>
-                <div class="spinnerBox" id="spinnerBox"></div>
+<div class="wrapper">
+  <div class="centerbox">
+    <div class="flexcenter">
+      <!-- Left panel -->
+      <div class="bigitem">
+        <div class="displayitem">
+          <div class="projectbox" id="projectbox">
+            <div id="editor">
+              <div class="editarea" v-if="projectName">
+                <h2>
+                  <span v-on:click="clearName()">{{projectName}}</span>
+                  <a href="https://help.github.com/articles/github-flavored-markdown/"
+                    target="_blank">(Format instructions here)</a>
+                </h2>
+                <textarea v-model="input" debounce="300"></textarea>
+                <h2>Preview</h2>
+                <div class="markdown-display" v-html="input | marked"></div>
+                <button class="accept-button" v-on:click="saveIdea()">Save</button>
               </div>
-              <div v-else>
-                <h2>Project Name:</h2>
-                <input type="text" v-model="inputTitle"></input>
-                <h2>Short Description:</h2>
-                <textarea v-model="shorDesc" debounce="300"></textarea>
-                <button v-on:click="acceptName()">Continue</button>
+              <div id="titleinput" v-else>
+                <div v-if="project_id && showSpinner">
+                  <h2>Loading project details...</h2>
+                  <div class="spinnerBox" id="spinnerBox"></div>
+                </div>
+                <div v-else>
+                  <h2>Project Name:</h2>
+                  <input type="text" v-model="inputTitle"></input>
+                  <h2>Short Description:</h2>
+                  <textarea v-model="shorDesc" debounce="300"></textarea>
+                  <button v-on:click="acceptName()">Continue</button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        <div style="height:0px;">
-          <span class="footer">
-            <a href="#">About</a>
-            <a href="#">Contact</a>
-            <a href="#">Terms of service</a>
-          </span>
+          <div style="height:0px;">
+            <span class="footer">
+              <a href="#">About</a>
+              <a href="#">Contact</a>
+              <a href="#">Terms of service</a>
+            </span>
+          </div>
         </div>
       </div>
-    </div>
-    <!-- Right panel -->
-    <div class="smallitem">
-      <div class="displayitem">
-        <h2>Notifications</h2>
-        <p><i>No new notifications</i></p>
+      <!-- Right panel -->
+      <div class="smallitem">
+        <div class="displayitem">
+          <h2>Notifications</h2>
+          <p><i>No new notifications</i></p>
+        </div>
       </div>
     </div>
   </div>
