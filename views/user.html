@@ -204,13 +204,13 @@ textarea:disabled {
               <img class="avatar" v-on:click="editAvatar()" 
                    v-bind:class="{'pointer': isOwnProfile, 'hover': isOwnProfile}" src="{{user_details.avatar}}" />
               <span class="name-display" v-if="!editableName">{{user_details.full_name}}</span>
-              <input class="edit-input" v-model="user_details.full_name" v-else
+              <input class="edit-input" v-focus-auto v-model="user_details.full_name" v-else
                      v-on:blur="saveName()" />
               <span class="name-display">({{user}})</span>
               <a class="edit-link" v-on:click="editName()" v-if="isOwnProfile && !editableName">Edit</a>
               <br />
               <b>Email: </b>
-              <input class="edit-input" v-model="user_details.email" v-if="editableEmail"
+              <input class="edit-input" v-focus-auto v-model="user_details.email" v-if="editableEmail"
                      v-on:blur="saveEmail()" value="{{user_details.email}}"/>
               <span class="email-display" v-else>{{user_details.email}}</span>
               <span class="edit-link" v-on:click="editEmail()" v-if="isOwnProfile && !editableEmail">Edit</span>
@@ -288,6 +288,7 @@ function addGravatars(projectArray) {
 
 var projectdisplay = new Vue({
   el: '#projectdisplay',
+  mixins: [VueFocus.mixin ],
   ready: function() {
     this.$http.get('/api/projects', {action: 'my_projects', owner:_onload_data.user}).then(function (response) {
       this.projects = response.data;
