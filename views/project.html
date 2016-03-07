@@ -283,7 +283,7 @@ h1 {
                 </div>
                 <a class="full-name" href="/{{user.username}}/">{{user.full_name}}</a>
                 <span class="contact">
-                  <button class="btn-primary">Invite</button>
+                  <button v-if="!user.hide" v-on:click="inviteUser($index, user.user_id)" style="margin-left: 30px;">Invite</button>
                   <button class="btn-primary">Contact</button>
                 </span>
                 <br />
@@ -512,6 +512,16 @@ var SuggestedUsers = new Vue({
         // If successful
         this.users = response.data;
       });
+    },
+    inviteUser: function(index, user_id){
+       request_params = {'action': 'new_invitation', 'project_id': project_id, 'user_id': user_id}
+       this.$http.put('/api/invitations/', request_params).then(function(response){
+       // If failed
+            if (!response.data || response.data.error) {
+              return;
+            }
+        this.users(index).hide = true;
+        });
     }
   },
   data: {
