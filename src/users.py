@@ -119,10 +119,6 @@ class UserHandler(object):
            'data' not in params:
             return json.dumps({"error": "Not enough data"})
 
-        # Check if action is allowed
-        if params['action'] not in self._ACTION['_POST']:
-            return json.dumps({'error': 'Action is not allowed'})
-
         # Check if action is in _ACTION list
         if params['action'] not in self._ACTION['_POST']:
             return json.dumps({"error": "Action is unavailable"})
@@ -219,8 +215,7 @@ class UserHandler(object):
         column = self._ACTION['_DELETE'][params['action']][1]
 
         # Form query to find and delete the skill based on the logged in user
-        # DO NOT pass any user's input into query
-        # SQL injection!
+        # So there's no security concern here
         query = """
                 DELETE FROM {0}  
                 WHERE user_id = (SELECT user_id FROM users WHERE username = %s)
@@ -306,22 +301,30 @@ def add_new_user(cur=None, username=None, email=None):
 
 """ Add skill """
 def add_user_skill(cur=None, user=None, skill=None):
-    # Check if the skill has already been in his account
+    # Add skill into account and increase the skill's count
+    # user uses cherrypy.session which means that it's the owner
+    # who requests this action. But make sure that the skill hasn't
+    # been in the account yet.
     query = """
-            SELECT * FROM user_skills
-            WHERE user_id = (SELECT user_id FROM users WHERE username = %s)
-            AND skill = %s;
+            DO $$
+                DECLARE
+                in_skill VARCHAR;
+                userId INT;
+                
+                BEGIN
+                    SELECT user_id INTO userId FROM users WHERE username = %s;
+                    in_skill = %s;
+
+                    PERFORM user_id FROM user_skills WHERE user_id = userId AND skill = in_skill;
+                    IF NOT FOUND THEN
+                        INSERT INTO user_skills (user_id, skill)
+                        VALUES (userId, in_skill);
+
+                        UPDATE skills SET count = count + 1 WHERE name = in_skill;
+                    END IF;
+                END;
+            $$
             """
     cur.execute(query, (user, skill, ))
-    if cur.fetchall():
-        return json.dumps({"error": "User already has that skill"})
-
-    # Add skill into account and increase the skill's count
-    query = """
-            INSERT INTO user_skills (user_id, skill)
-            VALUES ((SELECT user_id FROM users WHERE username = %s), %s);
-            UPDATE skills SET count = count + 1 WHERE name = %s;
-            """
-    cur.execute(query, (user, skill, skill, ))
     # Do not commit in here, commit in UserHandler class
     return json.dumps({})

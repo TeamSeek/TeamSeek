@@ -390,6 +390,11 @@ var projectdisplay = new Vue({
       var that = this;
       /* Render temporary skill tag when new skill is added serverside */
       skillOverlay.show(function(skill) {
+        var i;
+        for (i in that.user_details.user_skills) {
+          if (skill == that.user_details.user_skills[i].name)
+            return;
+        }
         that.user_details.user_skills.push({name:skill, level:'Beginner'});
       });
     },
