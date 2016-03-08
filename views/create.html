@@ -149,6 +149,13 @@ new Vue({
           if (callback) callback();
         }, function() {});
       }, function() {});
+
+      // Save title
+      params = {action: 'edit_title', project_id: project_id, data: this.inputTitle};
+      this.$http.post('/api/projects/', params, emulateJSON).then(function(response) {
+        if (response.data.error) console.log("Create: ", response.data.error);
+        // If successfully saved
+      });
     },
     saveIdea: function() {
       /* Create/Edit the idea. Edit if project_id is defined in querystring.  */

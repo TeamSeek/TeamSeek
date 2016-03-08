@@ -93,55 +93,12 @@ class ProjectHandler(object):
 
         # Create new dictionary cursor
         dCur = self.db.connection.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-
-        # If fetching projects "user" is currently a member of
-        if params['action'] == 'working_on':
-            query = """
-                SELECT	project_id, title, owner, short_desc,
-                        to_char(last_edit, 'MM-DD-YY') as last_edit,
-                        to_char(posted_date, 'MM-DD-YY') as posted_date,
-                        (SELECT update FROM project_extras WHERE project_id=project_info.project_id),
-                        (SELECT git_link FROM project_extras WHERE project_id=project_info.project_id),
-                        array(SELECT skill FROM project_skills WHERE project_id=project_info.project_id) AS project_skills,
-                        array(SELECT member FROM project_members WHERE project_id=project_info.project_id) AS project_members,
-                        long_desc, progress
-                FROM    project_info
-                WHERE project_id in (select project_id from project_members where member = %s)
-                ORDER BY posted_date DESC;
-                    """
-            cursor = self.db.connection.cursor()
-            dCur.execute(query, (params['user'],))
-            results = dCur.fetchall();
-            #results = [i[0] for i in results]
-            return json.dumps(results)
-
+            
         # If grabbing project's comments
         if params['action'] == 'project_cmts':
-            query = """
-                    SELECT  p.id, poster_id as user_id,
-                            (SELECT username FROM users WHERE user_id = poster_id),
-                            avatar, full_name,
-                            cmt as comment, 
-                            to_char(cmt_time, 'MM-DD-YY HH:MI:SS') as cmt_time, 
-                            array((SELECT row_to_json(d) FROM (SELECT c.id, c.poster_id as user_id,
-                                                                (SELECT username FROM users WHERE user_id = poster_id),
-                                                                avatar, full_name,
-                                                                c.cmt as comment, 
-                                                                to_char(c.cmt_time, 'MM-DD-YY HH:MI:SS') as cmt_time
-                                                                FROM project_cmts c
-                                                                LEFT JOIN user_extras ON (user_id = poster_id)
-                                                                WHERE parent_id = p.id
-                                                                ORDER BY cmt_time DESC
-                                                       ) d )) as c_comments
-                    FROM project_cmts p
-                    LEFT JOIN user_extras ON (user_id = poster_id)
-                    WHERE project_id = %s AND parent_id = 0
-                    ORDER BY cmt_time DESC;
-                    """
-            dCur.execute(query, (params['project_id'], ))
-            # Get results from database returned data
-            results = dCur.fetchall()
-            return json.dumps(results, indent = 4)
+            # Use helper function at the end of this file
+            result = fetch_comment(dCur, params['project_id'])
+            return result
 
         # Getting project's details
         query = """
@@ -154,19 +111,24 @@ class ProjectHandler(object):
                         array(SELECT member FROM project_members WHERE project_id=project_info.project_id) AS project_members,
                         long_desc, progress
                 FROM    project_info
-                WHERE owner = %s AND title LIKE %s
+                {0}
                 ORDER BY posted_date DESC;
                 """
+        query_format = "WHERE owner = %s AND title LIKE %s"
+
+        # If fetching projects "user" is currently a member of
+        if params['action'] == 'working_on':
+            query_format = "WHERE project_id in (select project_id from project_members where member = %s) -- %s"
 
         # If fetching a particular project details
         if 'project_details' == params['action']:
-            dCur.execute(query, (params['user'], params['title']))
+            dCur.execute(query.format(query_format), (params['user'], params['title']))
             result = dCur.fetchone()
             if not result:
                 raise cherrypy.HTTPError(404)
         # If fetching all projects from an owner
         else:
-            dCur.execute(query, (user,'%'))
+            dCur.execute(query.format(query_format), (user,'%'))
             result = dCur.fetchall()
 
         return json.dumps(result, indent = 4)
@@ -208,19 +170,31 @@ class ProjectHandler(object):
 
         # Check if title has been used, it's a unique thing for each user.
         if params['action'] == 'edit_title':
-            query = "SELECT * FROM user_info WHERE owner = %s and title = %s"
-            self.cur.execute(query, (cherrypy.session['user'], params['title'], ))
+            query = "SELECT * FROM project_info WHERE owner = %s and title = %s"
+            self.cur.execute(query, (cherrypy.session['user'], params['data'], ))
             if self.cur.fetchall():
                 return json.dumps({"error": "Title has been used"})
 
         # If editing values
         # only edit value if the currently logged in user is the project's owner
-        query = "UPDATE {0} SET {1} = %s WHERE project_id=%s AND owner = %s;"
-        self.cur.execute(query.format(table, column), (data, project_id, cherrypy.session['user']))
+        query = """
+                DO $$
+                    DECLARE
+                        in_data VARCHAR;
+                        projectId INT;
+                        in_owner VARCHAR;
+                    BEGIN
+                        in_data = %s;
+                        projectId = %s;
+                        in_owner = %s;
+                        UPDATE {0} SET {1} = in_data WHERE project_id=projectId AND owner = in_owner;
+                        UPDATE project_info SET last_edit = %s WHERE project_id = projectId;
+                    END;
+                $$
+                """
+        self.cur.execute(query.format(table, column), (data, project_id, cherrypy.session['user'], date.today()))
         # Commit the changes to database
         self.db.connection.commit()
-        # Update last_edit column
-        update_last_edit(self.cur, project_id)
         # Apply changes to database
         self.db.connection.commit()
 
@@ -427,3 +401,31 @@ def add_comment(dCur=None, cmt=None, project_id=None, parent_id=None):
     dCur.execute(query, (parent_id, project_id, cherrypy.session['user'], cmt, datetime.now(), ))
     msg = dCur.fetchone()
     return msg
+
+# Fetching comments
+def fetch_comment(dCur=None, project_id=None):
+    query = """
+            SELECT  p.id, poster_id as user_id,
+                    (SELECT username FROM users WHERE user_id = poster_id),
+                    avatar, full_name,
+                    cmt as comment, 
+                    to_char(cmt_time, 'MM-DD-YY HH:MI:SS') as cmt_time, 
+                    array((SELECT row_to_json(d) FROM (SELECT c.id, c.poster_id as user_id,
+                                                        (SELECT username FROM users WHERE user_id = poster_id),
+                                                        avatar, full_name,
+                                                        c.cmt as comment, 
+                                                        to_char(c.cmt_time, 'MM-DD-YY HH:MI:SS') as cmt_time
+                                                        FROM project_cmts c
+                                                        LEFT JOIN user_extras ON (user_id = poster_id)
+                                                        WHERE parent_id = p.id
+                                                        ORDER BY cmt_time DESC
+                                                      ) d )) as c_comments
+            FROM project_cmts p
+            LEFT JOIN user_extras ON (user_id = poster_id)
+            WHERE project_id = %s AND parent_id = 0
+            ORDER BY cmt_time DESC;
+            """
+    dCur.execute(query, (project_id, ))
+    # Get results from database returned data
+    results = dCur.fetchall()
+    return json.dumps(results, indent = 4)

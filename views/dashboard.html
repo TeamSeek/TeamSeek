@@ -311,7 +311,7 @@ var myideas = new Vue({
   ready: function() {
     var target = document.getElementById('ideaSpinnerBox')
     var spinner = new Spinner(LAYOUT_SPINNER_OPTS).spin(target);
-    this.$http.get('/api/projects', {action: 'my_projects'}).then(function (response) {
+    this.$http.get('/api/projects', {action: 'my_projects', user: this.init.user}).then(function (response) {
       this.myIdeas = response.data;
       addGravatars(this.myIdeas);
       this.showSpinner = false;
