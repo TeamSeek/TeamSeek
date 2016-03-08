@@ -61,10 +61,6 @@ class ProjectHandler(object):
     @cherrypy.expose
     def default(self, *path, **params):
         """ Forward HTTP methods to the correct function """
-        # Check if user's logged in
-        if 'user' not in cherrypy.session:
-            return json.dumps({"error": "You shouldn't be here"})
-
         # Forward HTTP methods
         http_method = getattr(self, cherrypy.request.method)
         return http_method(**params)
@@ -77,16 +73,13 @@ class ProjectHandler(object):
 
         :params: Checking _ACTION for a list of action
             i.e {'action': 'project_details', 'title': 'some title', 'user': 'some users'}
-            i.e {'action': 'my_projects'}
+            i.e {'action': 'my_projects', 'user': 'username'}
             i.e {'action': 'project_cmts', 'project_id': '1'}
         """
         full = False
-        # Grab user that's logged on
-        user = cherrypy.session['user']
-
         # If owner is provided
-        if 'owner' in params:
-            user = params['owner']
+        if params['action'] != 'project_cmts':
+            user = params['user']
 
         # Check if everything is provided
         if 'action' not in params and \
@@ -121,7 +114,6 @@ class ProjectHandler(object):
             results = dCur.fetchall();
             #results = [i[0] for i in results]
             return json.dumps(results)
-
 
         # If grabbing project's comments
         if params['action'] == 'project_cmts':
@@ -189,6 +181,10 @@ class ProjectHandler(object):
             i.e {'action': 'edit_title', 'project_id': '4', 'data': 'change data'}
         :return : {} for successful, {"error": "some error"} for failed
         """
+        # Check if user's logged in
+        if 'user' not in cherrypy.session:
+            return json.dumps({"error": "You shouldn't be here"})
+
         # Check that everything is right
         if 'action' not in params or \
            'project_id' not in params or \
@@ -218,11 +214,9 @@ class ProjectHandler(object):
                 return json.dumps({"error": "Title has been used"})
 
         # If editing values
-        # Execute this command
-        # Don't worry about SQL Injection because
-        # table and column are mapped, not user input
-        query = "UPDATE " + table + " SET " + column + " = %s WHERE project_id=%s;"
-        self.cur.execute(query, (data, project_id, ))
+        # only edit value if the currently logged in user is the project's owner
+        query = "UPDATE {0} SET {1} = %s WHERE project_id=%s AND owner = %s;"
+        self.cur.execute(query.format(table, column), (data, project_id, cherrypy.session['user']))
         # Commit the changes to database
         self.db.connection.commit()
         # Update last_edit column
@@ -246,6 +240,10 @@ class ProjectHandler(object):
 
         :return : {} if successful, {"error": "some error"}
         """
+        # Check if user's logged in
+        if 'user' not in cherrypy.session:
+            return json.dumps({"error": "You shouldn't be here"})
+
         # Check if everything is provided
         if 'action' not in params or \
           ('title' not in params and
@@ -277,8 +275,22 @@ class ProjectHandler(object):
         column = self._ACTION['_PUT'][params['action']][1]
 
         # Adding based on the action provided
-        query = "INSERT INTO " + table + " (project_id, " + column + ") VALUES (%s, %s);"
-        self.cur.execute(query, (params['project_id'], params['data'], ))
+        # only add member or skill if the current logged-in user
+        # is the owner of the project
+        query = """
+                DO $$
+                    DECLARE
+                        projectId INT;
+                    BEGIN
+                        project_id = %s;
+                        PERFORM project_id FROM project_info WHERE project_id = projectId AND owner = %s;
+                        IF FOUND THEN
+                            INSERT INTO {0} (project_id, {1}) VALUES (projectId, %s);
+                        END IF;
+                    END;
+                $$
+                """
+        self.cur.execute(query.format(table, column), (params['project_id'], cherrypy.session['user'], params['data'], ))
         # Apply changes to database
         self.db.connection.commit()
 
@@ -295,6 +307,10 @@ class ProjectHandler(object):
             i.e. {'action': 'delete_cmt', 'id': '1'}
         :return: {} for successful. {'error': 'some error'} for failed
         """
+        # Check if user's logged in
+        if 'user' not in cherrypy.session:
+            return json.dumps({"error": "You shouldn't be here"})
+
         # Check if everything is provided
         if 'action' not in params or \
            ('id' not in params and ('data' not in params or 'project_id' not in params)):
@@ -305,9 +321,13 @@ class ProjectHandler(object):
             return json.dumps({'error': 'Action is not allowed'})
 
         # If requesting to delete comment
+        # only if the current logged in user is the owner of the project
         if params['action'] == 'delete_cmt':
-            query = "DELETE FROM project_cmts WHERE id = %s;"
-            self.cur.execute(query, (params['id'], ))
+            query = """
+                    DELETE FROM project_cmts 
+                    WHERE id = %s AND poster_id = (SELECT user_id FROM users WHERE username = %s);
+                    """
+            self.cur.execute(query, (params['id'], cherrypy.session['user'] ))
             self.db.connection.commit()
             return json.dumps({})
 
@@ -315,8 +335,21 @@ class ProjectHandler(object):
         table = self._ACTION['_DELETE'][params['action']][0]
         column = self._ACTION['_DELETE'][params['action']][1]
         # Delete data (skill, member) from project
-        query = "DELETE FROM " + table + " WHERE " + column + " = %s AND project_id = %s;"
-        self.cur.execute(query, (params['data'], params['project_id'], ))
+        # only if the current logged in user is the owner of the project
+        query = """
+                DO $$
+                    DECLARE
+                        projectId INT;
+                    BEGIN
+                        projectId = %s;
+                        PERFORM project_id FROM project_info WHERE project_id = projectId AND owner = %s;
+                        IF FOUND THEN
+                            DELETE FROM {0} WHERE {1} = %s AND project_id = projectId;
+                        END IF;
+                    END;
+                $$
+                """
+        self.cur.execute(query.format(table, column), (cherrypy.session['user'], params['project_id'], params['data'], ))
         # Apply changes to database
         self.db.connection.commit()
         return json.dumps({})

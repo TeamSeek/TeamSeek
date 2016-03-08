@@ -424,7 +424,7 @@ var projectbox = new Vue({
         this.project_details.long_desc = response.data.long_desc || "No description yet!";
         /* If the project doesn't have any avatar, use default one */
         if (!this.project_details.avatar)
-          this.project_details.avatar = 'http://www.gravatar.com/avatar/2ddcb18c2d8d42f043ed8765b039876e?d=identicon';
+          this.project_details.avatar = getGravatar(this.project_details.owner + '/' + this.project_details.title);
         // If project's description isn't defined
         /* Now make sure we have the members' details */
         members.getMembersDetails(this.project_details.owner, this.project_details.project_members);

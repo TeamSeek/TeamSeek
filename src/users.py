@@ -49,9 +49,7 @@ class UserHandler(object):
     @cherrypy.expose
     def index(self, **params):
         """ Forward HTTP requests to the right handler """
-        # Make sure that user is logged in
-        if 'user' not in cherrypy.session:
-            return json.dumps({"error": "You shouldn't be here"})
+        
         # Forward HTTP requests
         http_method = getattr(self, cherrypy.request.method)
         return http_method(**params)
@@ -112,6 +110,10 @@ class UserHandler(object):
                         i.e. {'action': 'edit_cur_country', 'data': 'country'}
         :return: {} if successful or {"error": "some error"} if failed
         """
+        # Make sure that user is logged in
+        if 'user' not in cherrypy.session:
+            return json.dumps({"error": "You shouldn't be here"})
+
         # Check if everything is provided
         if 'action' not in params or \
            'data' not in params:
@@ -130,6 +132,7 @@ class UserHandler(object):
         column = self._ACTION['_POST'][params['action']][1]
 
         # Apply edit
+        # Editing based on the logged in user, so there's no security concern here.
         query = "UPDATE {0} SET {1} = %s WHERE user_id = (SELECT user_id FROM users WHERE username = %s) "
         # Forming parameters for query to pass into self.cur.execute()
         query_params = (params['data'], cherrypy.session['user'], )
@@ -167,11 +170,19 @@ class UserHandler(object):
             return json.dumps({'error': 'Action is not allowed'})
 
         # If it's adding user
+        # User can be added if they're not logged in
         if params['action'] == 'add_user':
             # msg will be json formatted
             msg = add_new_user(self.cur, params['username'], params['email'])
 
-        # If it's adding skill
+        # Make sure that user is logged in
+        # Only logged in user can add the skill
+        if 'user' not in cherrypy.session:
+            return json.dumps({"error": "You shouldn't be here"})
+
+        # If it's adding skill.
+        # The query uses logged in user as a search variable
+        # so there's no security concern here.
         if params['action'] == 'add_skill' and \
            'user' in cherrypy.session:
             # msg will be JSON formatted
@@ -190,6 +201,10 @@ class UserHandler(object):
                         i.e {'action': 'delete_skill', 'skill': 'skill'}
         :return: {} if successful or {"error": "some error"} if failed
         """
+        # Make sure that user is logged in
+        if 'user' not in cherrypy.session:
+            return json.dumps({"error": "You shouldn't be here"})
+
         # Check if everything is provided
         if 'action' not in params or \
            'data' not in params:

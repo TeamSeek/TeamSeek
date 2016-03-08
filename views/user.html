@@ -291,7 +291,7 @@ var projectdisplay = new Vue({
   el: '#projectdisplay',
   mixins: [VueFocus.mixin ],
   ready: function() {
-    this.$http.get('/api/projects', {action: 'my_projects', owner:_onload_data.user}).then(function (response) {
+    this.$http.get('/api/projects', {action: 'my_projects', user:_onload_data.user}).then(function (response) {
       this.projects = response.data;
       addGravatars(this.projects);
       this.showSpinner = false;
@@ -313,6 +313,7 @@ var projectdisplay = new Vue({
       if (!response.data.avatar) 
         this.user_details.avatar = 'http://www.gravatar.com/avatar/cabf11b4b39c76a47689a2db0f3458e9?d=identicon';
     }, function (response) {
+      console.log(response.data);
       // error callback
       this.showSpinner = false;
     });
