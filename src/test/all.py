@@ -37,6 +37,7 @@ print '(Loaded {0} out of {1} files)'.format(len(testModules), len(allFiles))
 
 testsPassed = 0
 totalTests = 0
+deinitFail = False
 
 for test in testModules:
     namelen = len(test.__name__)
@@ -57,12 +58,16 @@ for test in testModules:
         except AssertionError as e:
             error = traceback.extract_tb(sys.exc_info()[2])[1]
             print '!! Error @ `{0}` on line {1}'.format(error[3], error[1])
-            pass
     try:
         tObj.__deinit__()
     except AttributeError:
         # Not all tests need a deconstructor
         pass
+    except AssertionError as e:
+        error = traceback.extract_tb(sys.exc_info()[2])[1]
+        print '!! Error @ `{0}` on line {1}'.format(error[3], error[1])
+        print '!! module failed to deinitialize'
+        deinitFail = True
     print ' Successfully ran {0}/{1} tests'.format(success, len(tests))
     testsPassed += success
     totalTests += len(tests)
@@ -72,3 +77,5 @@ print '\t {0} tests run'.format(totalTests)
 print '\t {0} tests passed'.format(testsPassed)
 if testsPassed != totalTests:
     print 'There were errors'
+if deinitFail:
+    print 'There was a failure on deinitialization'
