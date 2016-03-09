@@ -134,33 +134,45 @@ class ApplicationHandler(object):
             status = 'approved'
 
         query = """
-                UPDATE applications 
-                SET status = %s 
-                WHERE id = %s 
-                RETURNING applicant_id, project_id, (SELECT notifications.id 
-                                                     FROM notifications 
-                                                     WHERE notifications.sender_id = applications.id);
+                CREATE OR REPLACE FUNCTION edit_application()
+                RETURNS INT AS
+                $BODY$
+                    DECLARE
+                        in_status VARCHAR;
+                        appID INT;
+                        projectID INT;
+                        applicantID INT;
+                        notificationID INT;
+                    BEGIN
+                        in_status = %s;
+                        appID = %s;
+
+                        UPDATE applications 
+                        SET status = in_status 
+                        WHERE id = appID 
+                        RETURNING applicant_id, project_id, (SELECT notifications.id 
+                                                             FROM notifications 
+                                                             WHERE notifications.sender_id = applications.id)
+                        INTO applicantID, projectID, notificationID;
+
+                        IF in_status = 'approved' THEN
+                            INSERT INTO project_members (project_id, member)
+                            VALUES (projectID, (SELECT username FROM users WHERE user_id = applicantID));
+                        END IF;
+                        
+                        RETURN notificationID;
+                    END;
+                $BODY$ LANGUAGE plpgsql;
+                
+                SELECT edit_application();
                 """
         self.cur.execute(query, (status, params['application_id'], ))
-
-        # Grab the returned values from database
-        fetch = self.cur.fetchall()
-        applicant_id = fetch[0][0]
-        project_id = fetch[0][1]
-        notification_id = fetch[0][2]
-
-        # If the application is approved
-        if params['action'] == 'approve':
-            # If status is approved
-            # Insert member into project
-            query = """
-                    INSERT INTO project_members (project_id, member)
-                    VALUES (%s, (SELECT username FROM users WHERE user_id = %s));
-                    """
-            self.cur.execute(query, (project_id, applicant_id, ))
-
         # Apply changes to database
         self.db.connection.commit()
+
+        # Grab the returned values from database
+        fetch = self.cur.fetchone()
+        notification_id = fetch[0]
 
         # Trigger notification
         request_params = {'action': 'delete', 'id': notification_id} 
