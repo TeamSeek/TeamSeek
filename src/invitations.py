@@ -184,7 +184,7 @@ class InvitationHandler(object):
 
         # Form a query for database
         query = """
-                CREATE OR REPLACE FUNCTION my_function()
+                CREATE OR REPLACE FUNCTION new_invitation()
                     RETURNS INT AS 
                 $BODY$
                 DECLARE 
@@ -210,7 +210,7 @@ class InvitationHandler(object):
                 END;
                 $BODY$ LANGUAGE plpgsql;
 
-                SELECT my_function();
+                SELECT new_invitation();
                 """
         query_params = (
             params['user_id'],

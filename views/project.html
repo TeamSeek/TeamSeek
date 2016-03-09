@@ -272,7 +272,7 @@ h1 {
 
         <!-- Suggested users -->
         <div id="suggested-users">
-          <div v-if="isOwnProject" class="displayitem">
+          <div v-if="isOwnProject && users.length > 1" class="displayitem">
             <b><h2>Suggested Users</h2></b>
             <div v-for="user in users"> 
               <div class="user-display" v-if="init.user != user.username">
@@ -451,7 +451,6 @@ var projectbox = new Vue({
                              'project_id': this.project_details.project_id};
       this.progressStyle.width = t + '%';
       this.$http.post('/api/projects/', update_progress).then(function(response) {
-        console.log(response);
       }, function(error) {
         alert(error);
       });
@@ -511,16 +510,26 @@ var SuggestedUsers = new Vue({
         }
         // If successful
         this.users = response.data;
+        for (i in this.users) {
+          params = {action: 'is_invited', user_id: this.users[i].user_id, project_id: projectbox.project_details.project_id};
+          this.$http.get('/api/invitations/', params).then(function (response) {
+            // If the user is invited, do not include in the user list.
+            if (response.data.length) {
+              console.log(response.data)
+              this.users.splice(i, 1);
+            }
+          });
+        }
       });
     },
     inviteUser: function(index, user_id){
-       request_params = {'action': 'new_invitation', 'project_id': project_id, 'user_id': user_id}
+       request_params = {'action': 'new_invitation', 'project_id': projectbox.project_details.project_id, 'user_id': user_id}
        this.$http.put('/api/invitations/', request_params).then(function(response){
        // If failed
             if (!response.data || response.data.error) {
               return;
             }
-        this.users(index).hide = true;
+        this.users.splice(index, 1);
         });
     }
   },
