@@ -183,11 +183,18 @@ class ProjectHandler(object):
                         in_data VARCHAR;
                         projectId INT;
                         in_owner VARCHAR;
+                        progress INT;
                     BEGIN
                         in_data = %s;
                         projectId = %s;
                         in_owner = %s;
-                        UPDATE {0} SET {1} = in_data WHERE project_id=projectId AND owner = in_owner;
+
+                        IF '{1}' = 'progress' THEN
+                            UPDATE {0} SET {1} = CAST(in_data AS integer) WHERE project_id=projectId AND owner = in_owner;
+                        ELSE
+                            UPDATE {0} SET {1} = in_data WHERE project_id=projectId AND owner = in_owner;
+                        END IF;
+
                         UPDATE project_info SET last_edit = %s WHERE project_id = projectId;
                     END;
                 $$
