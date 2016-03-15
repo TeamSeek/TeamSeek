@@ -252,7 +252,7 @@ h1 {
               </h3>
               <span>Created on: {{project_details.posted_date}} </span><br /> 
               <span style="position: absolute;">Progress: </span>
-              <div class="meter" v-bind:class="{'clickable':isOwnProject}"
+              <div class="meter" id="progressBar" v-bind:class="{'clickable':isOwnProject}"
                 v-on:click="changeProgress($event)">
                 <span v-bind:style="progressStyle"></span>
               </div>
@@ -444,7 +444,8 @@ var projectbox = new Vue({
       // Do nothing if user is not the owner
       if (!_onload_data.isOwnProject) return;
       // Divide click location by width of target
-      var t = parseInt((event.layerX / event.target.clientWidth) * 100, 10);
+      var fullWidth = document.getElementById('progressBar').clientWidth;
+      var t = parseInt((event.layerX / fullWidth) * 100, 10);
       if (t > 100) t = 100;
       var update_progress = {'action': 'edit_progress',
                              'data': parseInt(t),
