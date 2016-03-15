@@ -77,15 +77,16 @@ class ProjectHandler(object):
             i.e {'action': 'project_cmts', 'project_id': '1'}
         """
         full = False
+        # Check if everything is provided
+        if 'action' not in params or \
+           (('title' not in params or 'user' not in params) and \
+           'project_id' not in params and \
+           'user' not in params):
+            return json.dumps({"error": "Not enough data"})
+
         # If owner is provided
         if params['action'] != 'project_cmts':
             user = params['user']
-
-        # Check if everything is provided
-        if 'action' not in params and \
-           ('title' not in params or 'user' not in params) and \
-           'project_id' not in params:
-            return json.dumps({"error": "Not enough data"})
 
         # Check if action is allowed
         if params['action'] not in self._ACTION['_GET']:

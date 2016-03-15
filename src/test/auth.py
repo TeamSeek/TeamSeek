@@ -17,7 +17,7 @@ class Test:
         obj = testCommon.jsonToDict(result)
         assert obj['error'] == 'Not enough data' # Should return correct warning
     def get_project_list(self):
-        result = testCommon.curl(url + '/api/projects/?action=my_projects',
+        result = testCommon.curl(url + '/api/projects/?action=my_projects&user=navargas',
             read_cookie_file=cookieFile)
         obj = testCommon.jsonToDict(result)
         assert type(obj) == ListType # Returned object should be an array

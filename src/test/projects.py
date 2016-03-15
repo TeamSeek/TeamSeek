@@ -10,7 +10,7 @@ class Test:
     def __init__(self):
         testCommon.login(cookieFile, 'navargas', url)
     def my_projects_returns_array(self):
-        result = testCommon.curl(url + '/api/projects/?action=my_projects',
+        result = testCommon.curl(url + '/api/projects/?action=my_projects&user=navargas',
             read_cookie_file=cookieFile)
         obj = testCommon.jsonToDict(result)
         assert type(obj) == ListType # Returned object should be an array
