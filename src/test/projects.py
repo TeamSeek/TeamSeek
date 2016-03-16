@@ -14,6 +14,11 @@ class Test:
             read_cookie_file=cookieFile)
         obj = testCommon.jsonToDict(result)
         assert type(obj) == ListType # Returned object should be an array
+    def returns_not_enough_data_without_title(self):
+        data = testCommon.curl(url + '/api/projects/', PUT="action=new_project",
+            read_cookie_file=cookieFile)
+        obj = testCommon.jsonToDict(data)
+        assert obj['error'] == 'Not enough data'
     def __deinit__(self):
         os.remove(cookieFile)
         assert not os.path.isfile(cookieFile) # cookieFile was removed

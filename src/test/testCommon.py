@@ -3,12 +3,14 @@ import pycurl
 import urllib
 import cStringIO
 
-def curl(url, POST="", write_cookie_file="", read_cookie_file="",
+def curl(url, POST="", PUT="", write_cookie_file="", read_cookie_file="",
          cookie_string="", status=False, verbose=False, redir=False):
   buf = cStringIO.StringIO()
   c = pycurl.Curl()
   c.setopt(c.URL, url)
   if POST:
+    c.setopt(c.POSTFIELDS, POST)
+  if PUT:
     c.setopt(c.POSTFIELDS, POST)
   if write_cookie_file:
     c.setopt(c.COOKIEJAR, write_cookie_file)
