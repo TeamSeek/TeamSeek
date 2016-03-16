@@ -264,7 +264,7 @@ class ProjectHandler(object):
                     DECLARE
                         projectId INT;
                     BEGIN
-                        project_id = %s;
+                        projectId = %s;
                         PERFORM project_id FROM project_info WHERE project_id = projectId AND owner = %s;
                         IF FOUND THEN
                             INSERT INTO {0} (project_id, {1}) VALUES (projectId, %s);
