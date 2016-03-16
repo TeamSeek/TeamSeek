@@ -18,6 +18,9 @@
 .navbar-right .btn a {
   color: #808080 !important;
 }
+.navbar-right .btn {
+  margin-top: -10px;
+}
 
 #slider {
   padding: 100px 0 100px 0;
