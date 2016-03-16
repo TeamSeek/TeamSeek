@@ -283,7 +283,7 @@ h1 {
                 </div>
                 <a class="full-name" href="/{{user.username}}/">{{user.full_name}}</a>
                 <span class="contact">
-                  <button v-if="!user.hide" v-on:click="inviteUser($index, user.user_id)" style="margin-left: 30px;">Invite</button>
+                  <button class="btn-primary" v-if="!user.hide" v-on:click="inviteUser($index, user.user_id)" style="margin-left: 30px;">Invite</button>
                   <button class="btn-primary">Contact</button>
                 </span>
                 <br />
@@ -516,7 +516,6 @@ var SuggestedUsers = new Vue({
           this.$http.get('/api/invitations/', params).then(function (response) {
             // If the user is invited, do not include in the user list.
             if (response.data.length) {
-              console.log(response.data)
               this.users.splice(i, 1);
             }
           });
@@ -552,6 +551,7 @@ var ProjectComments = new Vue ( {
         // If failed to fetch comments
         if (!response.data[0] || response.data.error) {
           err = response.data.error || "No comments found";
+          this.comments = response.data;
           console.log("ProjectComments:", err);
           return;
         }
@@ -580,7 +580,7 @@ var ProjectComments = new Vue ( {
         // If comment is successfully posted
         this.cmtInput = '';
         this.replyInput = '';
-        this.getComments(this.project_id);
+        this.getComments();
       });
     },
     deleteCmt: function(id) {
