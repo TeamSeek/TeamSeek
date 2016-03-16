@@ -1,157 +1,49 @@
-html, body {
-    margin: 0;
-    padding: 0;
-    height: 100%;
-    background-color: #1379AA;
+.navbar {
+  border-radius: 0;
+  background-color: #6EB7ED;
+  border: 0;
+  font-size: 17px;
+  margin-bottom: 0;
+}
+.navbar a {
+  color: white !important;
+}
+.navbar a:hover {
+  color: #F3F3F3 !important;
+}
+.navbar-brand {
+  margin-top: 7px;
+  font-size: 30px;
+}
+.navbar-right .btn a {
+  color: #808080 !important;
 }
 
-.wrapper {
-    min-height: 100%;
-    position: relative;
+#slider {
+  padding: 100px 0 100px 0;
+  box-shadow: 0px 4px 5px -6px black;
+  background-color: #6EB7ED;
+  color: white;
+}
+.center {
+  margin: 0 auto;
+  text-align: center;
 }
 
-.container {
-    position: relative;
-    max-width: 1080px;
-    margin: 0 auto;
+#about {
+  padding: 30px 0 30px 0;
+  font-size: 20px;
 }
-/* Header style */
-.header {
-    background-color: #0B4176;
-    height: 100px;
-    z-index: 99;
-}
-
-.header .container #brand {
-    position: absolute;
-    margin: 20px 0 0 50px;
-    color: white;
-    font-size: 50px
-}
-
-#sign-in {
-    float: right;
-    margin-top: 30px;
-    margin-right: 30px;
-    background-color: white;
-    color: #0B4176;
-    font-size: 12px;
-}
-
-#sign-in:hover {
-    background-color: #ccccff;
-    color: black;
-}
-
-#menu {
-    list-style-type: none;
-    margin: 40px 30px 0 0;
-    float: right;
-}
-
-#menu li {
-    display: inline;
-    padding: 10px 10px 10px 10px;
-    color: white;
-    font-weight: bold;
-}
-
-#menu li:hover {
-    background-color: black;
-    border-radius: 80px;
-    color: white;
-}
-
-/* Content style */
 .content {
-    padding-bottom: 30px;
+  width: 50%;
 }
 
-.content .container {
-    text-align: center;
-    width: 700px;
-    position: absolute;
-    top: 35%;
-    left: 30%;
-    right: 30%;
+#cards {
+  padding: 30px 0 30px 0;
+  font-size: 20px;
 }
-
-#slogan {
-    font-weight: bold;
-    color: white;
-    font-size: 40px;
-}
-
-#get-started {
-    font-size: 25px;
-    background-color: #D8A000;
-    color: #F2F2F2;
-    line-height: 100px;
-}
-
-#get-started:hover {
-    color: #FFF;
-    background-color: #E9B00D;
-}
-
-/* Footer style */
-.footer {
-    background-color: #0B4176;
-    width: 100%;
-    height: 30px;
-    position: absolute;
-    bottom: 0;
-    left: 0;
-}
-
-#copyright {
-    color: white;
-    font-size: 15px;
-    margin: 0 0 0 50px;
-    line-height: 28px;
-}
-
-#footer-menu {
-    margin: 0 30px 0 0;
-    float: right;
-}
-
-#footer-menu li {
-    display: inline;
-    padding: 0 10px 0 10px;
-    color: white;
-    font-weight: bold;
-    line-height: 28px;
-}
-
-/* General */
-
-.button {
-    font: "museo-sans-rounded",sans-serif;
-    font-weight: bold;
-    background-color: white;
-    color: #0B4176;
-    border: 1px solid transparent;
-    border-radius: 50px;
-    padding: 7px 15px;
-    line-height: normal;
-}
-
-a {
-    text-decoration: none;
-}
-
-/* Testing tool */
-#overlay {
-    margin: auto;
-    position: fixed;
-    top: 0;
-    left: 50px;
-    right: 50px;
-    bottom: 50px;
-    width: 1080px;
-    height: 100vh;
-    background-color: black;
-    opacity: 0.2;
-    z-index: 5;
+.card {
+  margin: 0 30px 0 30px;
+  width: 250px;
+  display: inline-block !important;
 }

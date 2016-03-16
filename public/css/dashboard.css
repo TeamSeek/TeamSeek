@@ -22,7 +22,7 @@ textarea {
 
 a {
   text-decoration: none;
-  color: #4E4E4E !important;
+  color: #4E4E4E;
  }
 
 h2 {
@@ -39,7 +39,6 @@ a:hover {
  }
 
 .wrapper {
-  margin-top: 70px;
   background-color: #F9F9F9;
 }
 .dim-page {

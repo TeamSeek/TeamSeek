@@ -36,7 +36,7 @@
 .notification-display a {
   color: #02F2FB;
 }
-.btn {
+.button {
   background: #00870b;
   background-image: -webkit-linear-gradient(top, #00870b, #00b557);
   background-image: -moz-linear-gradient(top, #00870b, #00b557);
@@ -125,8 +125,8 @@
                     <a href="{{invitation.sender_username}}/{{invitation.project_title}}">{{invitation.project_title}}</a>
                   </span>
                   <div style="margin-top: 12px;"> 
-                    <span v-on:click="acceptInv(invitation)" class="btn accept-btn">Accept</span>
-                    <span v-on:click="denyInv(invitation)" class="btn deny-btn">Deny</span>
+                    <span v-on:click="acceptInv(invitation)" class="button accept-btn">Accept</span>
+                    <span v-on:click="denyInv(invitation)" class="button deny-btn">Deny</span>
                   </div>
                 </div>
               </div>

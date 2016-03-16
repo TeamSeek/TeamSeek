@@ -35,7 +35,7 @@ h1 {
 #application .displayitem {
   height: 100px;
 }
-.btn-primary {
+.button-primary {
   background-color: #F9F9F9;
   color: black;
   border: 1px solid #CFCFCF;
@@ -44,10 +44,10 @@ h1 {
   padding: 2px 10px 2px 10px;
   font-size: 13px;
 }
-.btn-primary:hover {
+.button-primary:hover {
   background-color: #FFF;
 }
-.btn {
+.button {
   background: #3498db;
   background-image: -webkit-linear-gradient(top, #3498db, #2980b9);
   background-image: -moz-linear-gradient(top, #3498db, #2980b9);
@@ -65,7 +65,7 @@ h1 {
   text-decoration: none;
   text-align: center;
 }
-.btn:hover {
+.button:hover {
   background: #3cb0fd;
   background-image: -webkit-linear-gradient(top, #3cb0fd, #3498db);
   background-image: -moz-linear-gradient(top, #3cb0fd, #3498db);
@@ -283,8 +283,8 @@ h1 {
                 </div>
                 <a class="full-name" href="/{{user.username}}/">{{user.full_name}}</a>
                 <span class="contact">
-                  <button class="btn-primary" v-if="!user.hide" v-on:click="inviteUser($index, user.user_id)" style="margin-left: 30px;">Invite</button>
-                  <button class="btn-primary">Contact</button>
+                  <button class="button-primary" v-if="!user.hide" v-on:click="inviteUser($index, user.user_id)" style="margin-left: 30px;">Invite</button>
+                  <button class="button-primary">Contact</button>
                 </span>
                 <br />
                 <div class="suggestion-details">
@@ -327,7 +327,7 @@ h1 {
                 </div>
                 <!-- End comment's replies -->
                 <textarea placeholder="Reply here" v-model="replyInput[cmt.id]" style="width:80%; margin: 10px 0 0 50px; resize: vertical;" rows="1"></textarea>
-                <button class="btn-primary" type="button" v-on:click="postCmt(cmt.id, replyInput[cmt.id])">Reply</button> </div>
+                <button class="button-primary" type="button" v-on:click="postCmt(cmt.id, replyInput[cmt.id])">Reply</button> </div>
             </div>
             <span style="font-size: 19px;" v-else>
                 There's no comment for this project yet.
@@ -335,7 +335,7 @@ h1 {
             <div style="margin-top: 20px; border-bottom: 0 transparent;" class="comment-box">
               <span>Comment: <br /></span>
               <textarea placeholder="New comment here" v-model="cmtInput" style="width:100%; resize:vertical;" rows="7"></textarea>
-              <button class="btn-primary" type="button" v-on:click="postCmt(0, cmtInput)">Post</button>
+              <button class="button-primary" type="button" v-on:click="postCmt(0, cmtInput)">Post</button>
             </div>
           </div>
         </div>
@@ -355,7 +355,7 @@ h1 {
       <div class="smallitem">
         <div id="application">
           <div v-if="!isOwnProject" class="displayitem">
-            <div v-if="!isApplied" v-on:click="joinProject()" class="btn join-btn">Join This Project</div>
+            <div v-if="!isApplied" v-on:click="joinProject()" class="button join-btn">Join This Project</div>
             <p class="join-btn" v-else>You have applied for this project</p>
           </div>
         </div>

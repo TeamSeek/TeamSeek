@@ -1,157 +1,46 @@
+<!-- Slider -->
+<div id="slider">
+  <div class="slides center">
+    <h1>Share Knowledge. Form Connection. Start Developing</h1>
+    <br />
+    <br />
+    <a href="https://github.com/login/oauth/authorize/?client_id={{client_id}}&redirect_uri={{callbackURL}}"><button type="button" class="btn btn-danger btn-lg">Join Now</button></a>
+  </div>
+</div>
+<!-- End of slider -->
 
-<!-- Styles -->
+<div id="about">
+  <div class="content center">
+    <h1>About TeamSeek</h1>
+    <p>We provide an awesome tool for developers to connect with other people and start working on a project that they have always wanted to complete.</p>
+  </div>
+</div>
 
-<!-- Styles End -->
-
-<!-- Admin Nav
--->  <div id="centerbox" class="page-container">
-
-  <header class="featured-post has-tag-icon post-25884 post type-post status-publish format-standard hentry category-industry tag-getting-started tag-inspiration tag-resolutions"><section><div class="row">
-     <h1 id="welcome"><a href="">Share Knowledge, Find Peers and Begin Developing.</a></h1>
-     <a href="https://github.com/login/oauth/authorize/?client_id={{client_id}}&redirect_uri={{callbackURL}}" class="button secondary large" id="get-started">Get Started!</a></div></section>
-  </header>
-
-  <script>
-    var welcome = new Vue({
-      el: '#centerbox',
-      methods: {
-        getStarted: function() {
-          // Get username string from user
-          var user = prompt('Debug feature: enter username to log in as');
-          if (user) {
-            this.$http.get('/api/auth/debug', {user:user}).then(function() {
-              // Refresh page for changes to take effect.
-              document.location = '/';
-            }, function() {
-              console.log('failure');
-            });
-          }
-        }
-      }
-    });
-  </script>
-
-
-<div class="sticky-subnav">
-  <div class="row">
-    <div class="twelve columns">
-      <ul class="sticky-subnav-list">
-        	<li class="cat-item cat-item-1311"><a href="#" >Users</a>
-</li>
-	<li class="cat-item cat-item-1313"><a href="#" >Developers</a>
-</li>
-	<li class="cat-item cat-item-1316"><a href="#" >Support</a>
-</li>
-	<li class="cat-item cat-item-1320"><a href="#" ></a>
-</li>
-      </ul>
+<div id="cards">
+  <div class="center">
+    <div class="card">
+      <h3 class="card-header">Featured</h3>
+      <div class="card-block">
+        <h4 class="card-title">Example Feature</h4>
+        <p class="card-text">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.</p>
+        <a href="#" class="btn btn-primary">Go somewhere</a>
+      </div>
+    </div>
+    <div class="card">
+      <h3 class="card-header">Featured</h3>
+      <div class="card-block">
+        <h4 class="card-title">Example Feature</h4>
+        <p class="card-text">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.</p>
+        <a href="#" class="btn btn-primary">Go somewhere</a>
+      </div>
+    </div>
+    <div class="card">
+      <h3 class="card-header">Featured</h3>
+      <div class="card-block">
+        <h4 class="card-title">Example Feature</h4>
+        <p class="card-text">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam.</p>
+        <a href="#" class="btn btn-primary">Go somewhere</a>
+      </div>
     </div>
   </div>
 </div>
-<section class="page-content">
-
-  <div class="row flex-grid">
-
-
-      <article class="excerpt">
-
-  <a href="#" class="post-25802 post type-post status-publish format-standard hentry category-learn tag-heroku tag-hosting-platform tag-tutorial">
-    <div class="featured-image has-tag-icon post-25802 post type-post status-publish format-standard hentry category-learn tag-heroku tag-hosting-platform tag-tutorial"></div>
-    <div class="copy">
-      <p class="category">Latest Feature for Users</p>
-      <h3>Share Projects</h3>
-      <div class="excerpt">
-        <p>Heroku is a hosting platform where you can deploy dynamic applications in Rails, PHP, Node.js and Python web applications. Prerequisites In order to deploy a site you need a couple of things: Have git installed Heroku Account &#8211; sign up&#8230;</p>
-      </div>
-    </div>
-
-  </a>
-
-</article>
-
-      <article class="excerpt">
-
-  <a href="#" class="post-25891 post type-post status-publish format-standard hentry category-news tag-css-2 tag-html tag-java tag-new-course tag-php tag-php7 tag-spring">
-    <div class="featured-image has-tag-icon post-25891 post type-post status-publish format-standard hentry category-news tag-css-2 tag-html tag-java tag-new-course tag-php tag-php7 tag-spring"></div>
-    <div class="copy">
-      <p class="category">Latest Update for Developers</p>
-      <h3>Redefined UI &#038; Python Support</h3>
-      <div class="excerpt">
-        <p>Every week, new projects are added to the growing TeamSeek Web App! Here is a short list of what was added for our Second Update [Sprint]. &nbsp; Redefined UI &#8211; Debug Login Support&#8230;</p>
-      </div>
-    </div>
-
-  </a>
-
-</article>
-
-      <article class="excerpt">
-
-  <a href="#" class="post-25877 post type-post status-publish format-standard hentry category-learn tag-feature tag-php tag-php7">
-    <div class="featured-image has-tag-icon post-25877 post type-post status-publish format-standard hentry category-learn tag-feature tag-php tag-php7"></div>
-    <div class="copy">
-      <p class="category">Latest Update for Support</p>
-      <h3>FAQ Coming Soon!</h3>
-      <div class="excerpt">
-        <p>I&#8217;m very happy to introduce you to the first major update for support. We have decided to have a FAQ page to guide all our users and developers to use TeamSeek quickly and Efficiently.</p>
-      </div>
-    </div>
-
-  </a>
-
-</article>
-
-<article class="excerpt">
-
-  <a href="" class="post-25783 post type-post status-publish format-standard has-post-thumbnail hentry category-industry tag-organization tag-productivity">
-    <div style="background-image: url(http://blog.teamtreehouse.com/wp-content/uploads/2015/12/shutterstock_235923037.jpg);"class="featured-image has-image-bg post-25783 post type-post status-publish format-standard has-post-thumbnail hentry category-industry tag-organization tag-productivity"></div>
-    <div class="copy">
-      <p class="category">TeamSeek Free Trial</p>
-      <h3>Yes-We're adding a free trial option!</h3>
-      <div class="excerpt">
-        <p>Our users would soon be able to try the service before deciding to subscribe. Don't worry, there's no need to resist!</p>
-      </div>
-    </div>
-
-  </a>
-
-</article>
-
-  </div>
-</section>
-
-<section class="newsletter">
-
-  <div class="row">
-
-    <div class="newsletter-embed">
-
-  <h2>Stay current</h2>
-
-  <p>Sign up for our newsletter, and we'll send you news and updates on our features, pricing, offers and more!</p>
-
-<!-- Begin MailChimp Signup Form -->
-<div id="mc_embed_signup">
-<form id="mc-embedded-subscribe-form" name="mc-embedded-subscribe-form" class="validate" target="_blank" novalidate>
-    <div id="mc_embed_signup_scroll">
-
-<div class="mc-field-group">
-	<input type="email" value="" name="EMAIL" class="required email" placeholder="Email Address" id="mce-EMAIL">
-</div>
-	<div id="mce-responses" class="clear">
-		<div class="response" id="mce-error-response" style="display:none"></div>
-		<div class="response" id="mce-success-response" style="display:none"></div>
-	</div>    <!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups-->
-    <div style="position: absolute; left: -5000px;"><input type="text" name="b_6cd557f316f6c6b5deccf9bc0_a9464578f3" tabindex="-1" value=""></div>
-    <div class="clear"><button type="button" name="subscribe" id="mc-embedded-subscribe" class="button primary subscribe">Subscribe</button></div>
-    </div>
-</form>
-</div>
-
-<!--End mc_embed_signup-->
-
-</div>
-
-</div>
-
-</section>
